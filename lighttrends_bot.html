@@ -265,13 +265,11 @@ function loadDemo() {
 
 async function searchGoogleImage(name, maker) {
   try {
-    const q = encodeURIComponent(`${name} ${maker} lamp lighting product`);
-    const apiUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CSE_ID}&q=${q}&searchType=image&num=3&imgSize=large`;
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error("Proxy error " + res.status);
-    const wrapper = await res.json();
-    const data = JSON.parse(wrapper.contents);
+    const q = encodeURIComponent(`${name} ${maker} lamp lighting`);
+    const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CSE_ID}&q=${q}&searchType=image&num=3&imgSize=large`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Google API " + res.status);
+    const data = await res.json();
     if (data.items && data.items.length > 0) return data.items[0].link;
     return null;
   } catch(e) {
@@ -279,8 +277,6 @@ async function searchGoogleImage(name, maker) {
     return null;
   }
 }
-
-async function parseAndLoad() {
   const raw = document.getElementById('json-input').value.trim();
   const errEl = document.getElementById('parse-error');
   const btn = document.getElementById('load-btn');
