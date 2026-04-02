@@ -286,7 +286,7 @@ function loadDemo() {
   showToast('Demo cargado — pulsa "Cargar y revisar"');
 }
 
-function parseAndLoad() {
+async function parseAndLoad() {
   var raw = document.getElementById('json-input').value.trim();
   var errEl = document.getElementById('parse-error');
   errEl.style.display = 'none';
