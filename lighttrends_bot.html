@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LightTrends Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#f4f2ed;color:#1a1a18;min-height:100vh}
+.topbar{background:#1a1a18;color:white;padding:12px 2rem;display:flex;align-items:center;justify-content:space-between}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.topbar-logo{width:28px;height:28px;border:1px solid rgba(255,255,255,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.topbar-name{font-size:14px;font-weight:500;letter-spacing:0.02em}
+.topbar-badge{font-size:11px;background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.2);padding:3px 10px;border-radius:20px;color:rgba(255,255,255,0.7)}
+.tabs-bar{background:#1a1a18;padding:0 2rem;display:flex;border-top:0.5px solid rgba(255,255,255,0.08)}
+.tab{font-size:13px;padding:10px 18px;cursor:pointer;color:rgba(255,255,255,0.4);border-bottom:2px solid transparent;transition:all 0.15s;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.tab.active{color:white;border-bottom-color:white}
+.tab-num{width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.1);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tab.active .tab-num{background:white;color:#1a1a18}
+.main{max-width:960px;margin:0 auto;padding:2rem 1.5rem}
+.section{display:none}.section.active{display:block}
+.page-title{font-family:'DM Serif Display',serif;font-size:24px;font-weight:400;margin-bottom:6px}
+.page-sub{font-size:14px;color:#666;margin-bottom:2rem;line-height:1.6}
+.paste-wrap{background:white;border-radius:12px;border:0.5px solid #e0ddd5;overflow:hidden;margin-bottom:1.2rem}
+.paste-topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f9f8f5;border-bottom:0.5px solid #e0ddd5}
+.paste-lbl{font-size:12px;font-weight:500;color:#888}
+textarea{width:100%;padding:16px;border:none;font-size:13px;background:white;color:#1a1a18;font-family:monospace;resize:vertical;min-height:160px;outline:none;line-height:1.6}
+.load-btn{width:100%;padding:13px;background:#1a1a18;color:white;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity 0.15s}
+.load-btn:hover{opacity:0.85}
+.err-box{font-size:13px;color:#991b1b;background:#fef2f2;border:0.5px solid #fca5a5;border-radius:8px;padding:10px 14px;margin-top:10px;display:none}
+.approve-all-bar{background:white;border-radius:10px;border:0.5px solid #e0ddd5;padding:14px 18px;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.approve-summary{font-size:14px;font-weight:500}
+.approve-sub{font-size:12px;color:#888;margin-top:2px}
+.review-actions{display:flex;gap:8px}
+.btn-sm{font-size:13px;padding:8px 16px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;font-weight:500}
+.btn-outline{background:transparent;border:0.5px solid #ccc;color:#1a1a18}.btn-outline:hover{background:#f0ede6}
+.btn-dark{background:#1a1a18;border:none;color:white}.btn-dark:hover{opacity:0.85}
+.btn-green{background:#0F6E56;border:none;color:white}.btn-green:hover{opacity:0.85}
+.posts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.post-card{background:white;border-radius:12px;border:1.5px solid #e0ddd5;overflow:hidden;transition:all 0.2s;position:relative}
+.post-card.approved{border-color:#0F6E56;box-shadow:0 0 0 3px rgba(15,110,86,0.10)}
+.post-card.deleted{opacity:0.28;transform:scale(0.96);pointer-events:none}
+.post-img-wrap{width:100%;height:190px;overflow:hidden;background:#edeae3;display:flex;align-items:center;justify-content:center;position:relative}
+.post-img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.post-img-ph{font-size:36px;color:#ccc;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.post-body{padding:14px}
+.cat-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin-bottom:8px;font-weight:500}
+.cat-inter{background:#E1F5EE;color:#0F6E56}
+.cat-arch{background:#EEEDFE;color:#534AB7}
+.cat-ext{background:#FAEEDA;color:#854F0B}
+.cat-news{background:#f0ede6;color:#888}
+.post-name{font-size:15px;font-weight:500;margin-bottom:3px}
+.post-maker{font-size:12px;color:#888;margin-bottom:8px}
+.post-desc{font-size:12px;color:#555;line-height:1.65;margin-bottom:10px}
+.post-link{font-size:12px;color:#0F6E56;text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.post-link:hover{text-decoration:underline}
+.post-actions{display:flex;gap:8px;padding:10px 14px 14px}
+.action-btn{flex:1;padding:9px 0;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:5px}
+.approve-btn{background:#f0faf6;color:#0F6E56;border:1px solid #9FE1CB}.approve-btn:hover{background:#d4f4e8}
+.approve-btn.active{background:#0F6E56;color:white;border-color:#0F6E56}
+.delete-btn{background:#fef8f8;color:#991b1b;border:1px solid #f5c4c4}.delete-btn:hover{background:#fde8e8}
+.delete-btn.active{background:#991b1b;color:white;border-color:#991b1b}
+.status-pill{position:absolute;top:10px;left:10px;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;display:none;z-index:2}
+.s-approved{background:#0F6E56;color:white;display:block}
+.s-deleted{background:#991b1b;color:white;display:block}
+.nl-toolbar{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap}
+.nl-frame{background:white;border-radius:12px;border:0.5px solid #e0ddd5;overflow:hidden}
+.nl-frame-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#f9f8f5;border-bottom:0.5px solid #e0ddd5}
+.nl-frame-lbl{font-size:11px;font-weight:500;color:#888;letter-spacing:0.06em;text-transform:uppercase}
+.nl-body{padding:2.5rem 2rem}
+.nl-eyebrow{font-size:10px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:#888;margin-bottom:8px}
+.nl-main-title{font-family:'DM Serif Display',serif;font-size:30px;font-weight:400;line-height:1.15;margin-bottom:6px}
+.nl-date-line{font-size:13px;color:#888}
+.nl-rule{height:1px;background:#e0ddd5;margin:1.5rem 0}
+.nl-intro-text{font-size:14px;line-height:1.8;color:#444;margin-bottom:2rem}
+.nl-section-lbl{font-size:10px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:#aaa;margin-bottom:1rem}
+.nl-post{display:flex;gap:18px;padding:18px 0;border-bottom:0.5px solid #e0ddd5;align-items:flex-start}
+.nl-post:last-child{border-bottom:none}
+.nl-post-img{width:110px;height:82px;object-fit:cover;border-radius:8px;flex-shrink:0}
+.nl-post-ph{width:110px;height:82px;border-radius:8px;flex-shrink:0;background:#edeae3;display:flex;align-items:center;justify-content:center;font-size:22px;color:#bbb}
+.nl-post-content{flex:1;min-width:0}
+.nl-post-name{font-size:15px;font-weight:500;margin-bottom:2px}
+.nl-post-maker{font-size:12px;color:#888;margin-bottom:6px}
+.nl-post-desc{font-size:13px;color:#555;line-height:1.7;margin-bottom:8px}
+.nl-post-link{font-size:12px;color:#0F6E56;text-decoration:none}
+.nl-post-link:hover{text-decoration:underline}
+.nl-footer-block{margin-top:1.5rem;padding-top:1rem;border-top:0.5px solid #e0ddd5;font-size:12px;color:#aaa}
+.send-block{background:white;border-radius:12px;border:0.5px solid #e0ddd5;padding:1.4rem;margin-top:1.5rem}
+.send-block-title{font-size:14px;font-weight:500;margin-bottom:14px}
+.email-row{display:flex;gap:8px;margin-bottom:10px}
+.email-input{flex:1;padding:9px 13px;border:0.5px solid #e0ddd5;border-radius:8px;font-size:14px;background:white;color:#1a1a18;font-family:'DM Sans',sans-serif;outline:none}
+.email-input:focus{border-color:#1a1a18}
+.chips-row{display:flex;flex-wrap:wrap;gap:6px;min-height:32px;margin-bottom:14px}
+.contact-chip{display:flex;align-items:center;gap:6px;font-size:13px;background:#f4f2ed;border:0.5px solid #e0ddd5;padding:5px 11px;border-radius:20px}
+.chip-x{cursor:pointer;color:#aaa;font-size:15px;line-height:1}.chip-x:hover{color:#1a1a18}
+.send-final-btn{width:100%;padding:13px;background:#1a1a18;color:white;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity 0.15s}
+.send-final-btn:hover{opacity:0.85}
+.empty-state{text-align:center;padding:4rem 2rem;color:#888}
+.empty-title{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;color:#1a1a18;margin:14px 0 8px}
+.empty-sub{font-size:14px;line-height:1.6}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a18;color:white;font-size:13px;padding:11px 22px;border-radius:8px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="8" r="4" stroke="white" stroke-width="1.5"/>
+        <path d="M10 12v5M7 17h6" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M4 8H2M18 8h-2M5.5 3.5l-1-1M15.5 3.5l1-1" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span class="topbar-name">LightTrends Bot</span>
+  </div>
+  <span class="topbar-badge">Newsletter de iluminación</span>
+</div>
+
+<div class="tabs-bar">
+  <div class="tab active" onclick="switchTab('paste')"><div class="tab-num">1</div>Pegar report</div>
+  <div class="tab" onclick="switchTab('review')"><div class="tab-num">2</div>Revisar posts</div>
+  <div class="tab" onclick="switchTab('newsletter')"><div class="tab-num">3</div>Newsletter</div>
+</div>
+
+<div class="main">
+
+  <div class="section active" id="tab-paste">
+    <div class="page-title">Pegar el report de Claude</div>
+    <div class="page-sub">Pega el JSON del report con los posts e imágenes. Aprueba los que quieres incluir en el newsletter.</div>
+    <div class="paste-wrap">
+      <div class="paste-topbar">
+        <span class="paste-lbl">JSON del report</span>
+        <button class="btn-sm btn-outline" style="padding:5px 10px;font-size:12px;" onclick="loadDemo()">Cargar demo</button>
+      </div>
+      <textarea id="json-input" placeholder='{"date":"2 de abril de 2026","intro":"...","posts":[{"name":"Ringo","maker":"Marset","category":"interior","description":"...","image":"https://...","link":"https://..."}]}'></textarea>
+    </div>
+    <button class="load-btn" id="load-btn" onclick="parseAndLoad()">Cargar y revisar posts →</button>
+    <div class="err-box" id="parse-error"></div>
+  </div>
+
+  <div class="section" id="tab-review">
+    <div id="review-empty" class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="8" y="6" width="32" height="36" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M16 18h16M16 25h16M16 32h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <div class="empty-title">Sin posts todavía</div>
+      <div class="empty-sub">Pega el JSON en la pestaña anterior.</div>
+    </div>
+    <div id="review-content" style="display:none">
+      <div class="approve-all-bar">
+        <div>
+          <div class="approve-summary" id="approve-summary">0 aprobados</div>
+          <div class="approve-sub">Aprueba los que quieres · Elimina los que no</div>
+        </div>
+        <div class="review-actions">
+          <button class="btn-sm btn-outline" onclick="approveAll()">Aprobar todos</button>
+          <button class="btn-sm btn-green" onclick="goToNewsletter()">Generar newsletter →</button>
+        </div>
+      </div>
+      <div class="posts-grid" id="posts-grid"></div>
+    </div>
+  </div>
+
+  <div class="section" id="tab-newsletter">
+    <div id="nl-empty" class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="4" y="12" width="40" height="28" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M4 20l20 12 20-12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <div class="empty-title">Aprueba posts primero</div>
+      <div class="empty-sub">En "Revisar posts" aprueba los que quieres incluir.</div>
+    </div>
+    <div id="nl-content" style="display:none">
+      <div class="nl-toolbar">
+        <button class="btn-sm btn-outline" onclick="switchTab('review')">← Volver a revisar</button>
+        <button class="btn-sm btn-outline" onclick="copyHTML()">Copiar HTML</button>
+        <button class="btn-sm btn-outline" onclick="copyText()">Copiar texto</button>
+      </div>
+      <div class="nl-frame">
+        <div class="nl-frame-bar">
+          <span class="nl-frame-lbl">Vista previa del newsletter</span>
+          <span id="nl-post-count" style="font-size:12px;color:#888"></span>
+        </div>
+        <div class="nl-body" id="nl-body"></div>
+      </div>
+      <div class="send-block">
+        <div class="send-block-title">Enviar a contactos</div>
+        <div class="email-row">
+          <input class="email-input" id="email-input" type="email" placeholder="email@ejemplo.com"/>
+          <button class="btn-sm btn-dark" onclick="addContact()">Añadir</button>
+        </div>
+        <div class="chips-row" id="contacts-list">
+          <span style="font-size:13px;color:#aaa;align-self:center;">Sin contactos todavía</span>
+        </div>
+        <button class="send-final-btn" onclick="simulateSend()">Enviar newsletter</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const VERCEL_API = 'https://lighttrends.vercel.app/api/screenshot';
+
+async function uploadViaVercel(imageUrl) {
+  try {
+    const res = await fetch(VERCEL_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_url: imageUrl })
+    });
+    if (!res.ok) throw new Error('Vercel error ' + res.status);
+    const data = await res.json();
+    return data.cloudinary_url || null;
+  } catch(e) {
+    console.error('Vercel upload error:', e.message);
+    return null;
+  }
+}
+
+const DEMO = {
+  date: "2 de abril de 2026",
+  intro: "Semana cargada de novedades: Marset presenta su catálogo 2026 con Ringo, Gambosa y Fris mientras Flos consolida My Circuit y SuperWire como referencias del mercado arquitectónico y decorativo.",
+  posts: [
+    {
+      name: "Ringo",
+      maker: "Marset × Joan Gaspar",
+      category: "interior",
+      description: "Gran colgante de policarbonato que imita un bloque de hielo. Disponible en verde, rosé, smoke y dark smoke en 70 y 90 cm con tres temperaturas de color.",
+      image: "https://images.unsplash.com/photo-1524484485831-a92ffc0de03f?w=600&h=450&fit=crop&q=80",
+      link: "https://www.marset.com/en/indoor-lighting/pendant-lamps/ringo/"
+    },
+    {
+      name: "Gambosa",
+      maker: "Marset × Mathias Hahn",
+      category: "interior",
+      description: "Lámpara de mesa escultórica cuya pantalla curva parece flotar sin conexión visible con el pie. En rosa pálido, negro opaco y metacrilato opal.",
+      image: "https://images.unsplash.com/photo-1507652313519-d4e9174996dd?w=600&h=450&fit=crop&q=80",
+      link: "https://www.marset.com/en/indoor-lighting/table-lamps/gambosa/"
+    },
+    {
+      name: "My Circuit",
+      maker: "Flos × Michael Anastassiades",
+      category: "arquitectonica",
+      description: "Sistema de iluminación arquitectónica modular con gestos infinitos de configuración en techo. Compatible con el proyector My Spot para integración total.",
+      image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=450&fit=crop&q=80",
+      link: "https://professional.flos.com/en/global/model/my-circuit-lines-model742/"
+    },
+    {
+      name: "SuperWire",
+      maker: "Flos × Formafantasma",
+      category: "interior",
+      description: "Sistema modular completamente reparable. Paneles de vidrio hexagonal y LED flexible sustituible sin devolver la lámpara al fabricante.",
+      image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&h=450&fit=crop&q=80",
+      link: "https://www.flos.com/en/us/superwire-formafantasma.html"
+    },
+    {
+      name: "Fris",
+      maker: "Marset × Joan Gaspar",
+      category: "arquitectonica",
+      description: "Líneas de luz flotantes en colgante, pared y techo. El tubo de vidrio rota manualmente entre luz directa y ambiente. Composiciones infinitas.",
+      image: "https://images.unsplash.com/photo-1486946255434-2466348c2166?w=600&h=450&fit=crop&q=80",
+      link: "https://www.marset.com/en/indoor-lighting/pendant-lamps/fris/"
+    }
+  ]
+};
+
+let reportData = null;
+let postStates = {};
+let contacts = [];
+
+function initApp() {
+  document.getElementById('email-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') addContact();
+  });
+}
+
+function switchTab(tab) {
+  ['paste','review','newsletter'].forEach(function(t, i) {
+    document.querySelectorAll('.tab')[i].classList.toggle('active', t === tab);
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+  });
+}
+
+function loadDemo() {
+  document.getElementById('json-input').value = JSON.stringify(DEMO, null, 2);
+  showToast('Demo cargado — pulsa "Cargar y revisar"');
+}
+
+async function parseAndLoad() {
+  var raw = document.getElementById('json-input').value.trim();
+  var errEl = document.getElementById('parse-error');
+  errEl.style.display = 'none';
+  if (!raw) { errEl.textContent = 'El campo está vacío.'; errEl.style.display = 'block'; return; }
+  try {
+    var clean = raw.replace(/```json|```/g, '').trim();
+    var match = clean.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('No se encontró JSON válido');
+    var parsed = JSON.parse(match[0]);
+    var posts = parsed.posts || parsed.trends;
+    if (!posts || !Array.isArray(posts)) throw new Error('No se encontró el array de posts');
+    parsed.posts = posts;
+    reportData = parsed;
+    postStates = {};
+    posts.forEach(function(_, i) { postStates[i] = 'pending'; });
+    // Upload images via Vercel
+    uploadImagesAndRender(parsed);
+  } catch(e) {
+    errEl.textContent = 'Error: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+async function uploadImagesAndRender(parsed) {
+  var btn = document.getElementById('load-btn');
+  btn.disabled = true;
+  btn.textContent = 'Subiendo imágenes...';
+  for (var i = 0; i < parsed.posts.length; i++) {
+    var p = parsed.posts[i];
+    if (p.image) {
+      var cloudUrl = await uploadViaVercel(p.image);
+      if (cloudUrl) parsed.posts[i].image = cloudUrl;
+    }
+  }
+  btn.disabled = false;
+  btn.textContent = 'Cargar y revisar posts →';
+  renderReview();
+  switchTab('review');
+  showToast('Posts cargados con imágenes');
+}
+
+function catClass(c) {
+  if (!c) return 'news';
+  var v = c.toLowerCase();
+  if (v.includes('inter') || v.includes('decor')) return 'inter';
+  if (v.includes('arquit')) return 'arch';
+  if (v.includes('exter') || v.includes('urban')) return 'ext';
+  return 'news';
+}
+
+function catLabel(c) {
+  if (!c) return 'Sector';
+  var v = c.toLowerCase();
+  if (v.includes('inter') || v.includes('decor')) return 'Interior';
+  if (v.includes('arquit')) return 'Arquitectónica';
+  if (v.includes('exter') || v.includes('urban')) return 'Exterior';
+  return 'Sector';
+}
+
+function renderReview() {
+  document.getElementById('review-empty').style.display = 'none';
+  document.getElementById('review-content').style.display = 'block';
+  document.getElementById('posts-grid').innerHTML = reportData.posts.map(function(p, i) {
+    var cc = catClass(p.category);
+    var cl = catLabel(p.category);
+    return '<div class="post-card" id="card-' + i + '">' +
+      '<div class="status-pill" id="pill-' + i + '"></div>' +
+      '<div class="post-img-wrap">' +
+      (p.image ? '<img src="' + p.image + '" alt="' + p.name + '" onerror="this.style.display=\'none\';document.getElementById(\'ph-' + i + '\').style.display=\'flex\'">' : '') +
+      '<div id="ph-' + i + '" class="post-img-ph" style="' + (p.image ? 'display:none' : '') + '">💡</div>' +
+      '</div>' +
+      '<div class="post-body">' +
+      '<span class="cat-badge cat-' + cc + '">' + cl + '</span>' +
+      '<div class="post-name">' + p.name + '</div>' +
+      '<div class="post-maker">' + (p.maker || '') + '</div>' +
+      '<div class="post-desc">' + (p.description || '') + '</div>' +
+      (p.link ? '<a class="post-link" href="' + p.link + '" target="_blank">→ ' + p.link + '</a>' : '') +
+      '</div>' +
+      '<div class="post-actions">' +
+      '<button class="action-btn approve-btn" id="abtn-' + i + '" onclick="setState(' + i + ',\'approved\')">' +
+      '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Aprobar</button>' +
+      '<button class="action-btn delete-btn" id="dbtn-' + i + '" onclick="setState(' + i + ',\'deleted\')">' +
+      '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Eliminar</button>' +
+      '</div></div>';
+  }).join('');
+  updateSummary();
+}
+
+function setState(i, state) {
+  postStates[i] = postStates[i] === state ? 'pending' : state;
+  var card = document.getElementById('card-' + i);
+  var pill = document.getElementById('pill-' + i);
+  var ab = document.getElementById('abtn-' + i);
+  var db = document.getElementById('dbtn-' + i);
+  card.classList.remove('approved', 'deleted');
+  ab.classList.remove('active');
+  db.classList.remove('active');
+  pill.className = 'status-pill';
+  pill.textContent = '';
+  if (postStates[i] === 'approved') {
+    card.classList.add('approved'); ab.classList.add('active');
+    pill.classList.add('s-approved'); pill.textContent = '✓ Aprobado';
+  } else if (postStates[i] === 'deleted') {
+    card.classList.add('deleted'); db.classList.add('active');
+    pill.classList.add('s-deleted'); pill.textContent = '✕ Eliminado';
+  }
+  updateSummary();
+}
+
+function approveAll() {
+  reportData.posts.forEach(function(_, i) {
+    if (postStates[i] !== 'deleted') setState(i, 'approved');
+  });
+  showToast('Todos aprobados');
+}
+
+function updateSummary() {
+  var a = Object.values(postStates).filter(function(s) { return s === 'approved'; }).length;
+  document.getElementById('approve-summary').textContent = a + ' de ' + reportData.posts.length + ' aprobados';
+}
+
+function goToNewsletter() {
+  var a = Object.values(postStates).filter(function(s) { return s === 'approved'; }).length;
+  if (a === 0) { showToast('Aprueba al menos un post'); return; }
+  renderNewsletter();
+  switchTab('newsletter');
+  showToast('Newsletter listo con ' + a + ' post' + (a > 1 ? 's' : ''));
+}
+
+function renderNewsletter() {
+  document.getElementById('nl-empty').style.display = 'none';
+  document.getElementById('nl-content').style.display = 'block';
+  var approved = reportData.posts.filter(function(_, i) { return postStates[i] === 'approved'; });
+  document.getElementById('nl-post-count').textContent = approved.length + ' post' + (approved.length > 1 ? 's' : '');
+  var postsHTML = approved.map(function(p) {
+    var imgEl = p.image
+      ? '<img class="nl-post-img" src="' + p.image + '" alt="' + p.name + '" onerror="this.outerHTML=\'<div class=nl-post-ph>💡</div>\'">'
+      : '<div class="nl-post-ph">💡</div>';
+    return '<div class="nl-post">' + imgEl +
+      '<div class="nl-post-content">' +
+      '<div class="nl-post-name">' + p.name + '</div>' +
+      '<div class="nl-post-maker">' + (p.maker || '') + '</div>' +
+      '<div class="nl-post-desc">' + (p.description || '') + '</div>' +
+      (p.link ? '<a class="nl-post-link" href="' + p.link + '" target="_blank">→ Ver producto</a>' : '') +
+      '</div></div>';
+  }).join('');
+  document.getElementById('nl-body').innerHTML =
+    '<div class="nl-eyebrow">LightTrends · Newsletter semanal</div>' +
+    '<div class="nl-main-title">Tendencias en<br>Iluminación</div>' +
+    '<div class="nl-date-line">' + (reportData.date || '') + '</div>' +
+    '<div class="nl-rule"></div>' +
+    '<div class="nl-intro-text">' + (reportData.intro || '') + '</div>' +
+    '<div class="nl-section-lbl">Productos y tendencias de la semana</div>' +
+    postsHTML +
+    '<div class="nl-footer-block">Generado por LightTrends Bot · Para darte de baja responde con "baja".</div>';
+}
+
+function addContact() {
+  var input = document.getElementById('email-input');
+  var email = input.value.trim();
+  if (!email || !email.includes('@')) { showToast('Email no válido'); return; }
+  if (contacts.includes(email)) { showToast('Ya está en la lista'); input.value = ''; return; }
+  contacts.push(email); input.value = ''; renderContacts();
+}
+
+function removeContact(i) { contacts.splice(i, 1); renderContacts(); }
+
+function renderContacts() {
+  var list = document.getElementById('contacts-list');
+  list.innerHTML = contacts.length === 0
+    ? '<span style="font-size:13px;color:#aaa;align-self:center;">Sin contactos todavía</span>'
+    : contacts.map(function(c, i) {
+        return '<div class="contact-chip"><span>' + c + '</span><span class="chip-x" onclick="removeContact(' + i + ')">×</span></div>';
+      }).join('');
+}
+
+function simulateSend() {
+  if (contacts.length === 0) { showToast('Añade al menos un contacto'); return; }
+  showToast('Newsletter enviado a ' + contacts.length + ' contacto' + (contacts.length > 1 ? 's' : '') + ' ✓');
+}
+
+function copyHTML() {
+  navigator.clipboard.writeText(document.getElementById('nl-body').innerHTML).then(function() { showToast('HTML copiado'); });
+}
+
+function copyText() {
+  navigator.clipboard.writeText(document.getElementById('nl-body').innerText).then(function() { showToast('Texto copiado'); });
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+initApp();
+</script>
+</body>
+</html>
