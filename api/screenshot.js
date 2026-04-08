@@ -9,23 +9,43 @@ cloudinary.config({
 const BROWSERLESS_TOKEN = '2UIT0JKjRg1QyJL56144746b3c0182241600035afc22d5600';
 
 async function downloadImageViaBrowserless(imageUrl) {
-  // Use Browserless /download endpoint to fetch the image as a real browser would
-  const response = await fetch(`https://chrome.browserless.io/download?token=${BROWSERLESS_TOKEN}`, {
+  // Use Browserless /function to fetch just the image bytes with browser headers
+  const response = await fetch(`https://chrome.browserless.io/function?token=${BROWSERLESS_TOKEN}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      url: imageUrl,
-      waitFor: 1000,
-      gotoOptions: {
-        waitUntil: 'networkidle2',
-        timeout: 15000
-      }
+      code: `
+        const https = require('https');
+        const http = require('http');
+        
+        module.exports = async ({ page }) => {
+          // Use page.evaluate to fetch the image as a browser would
+          const imageData = await page.evaluate(async (url) => {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            return new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(blob);
+            });
+          }, '${imageUrl}');
+          
+          return {
+            data: imageData,
+            type: 'application/json'
+          };
+        };
+      `
     })
   });
 
-  if (!response.ok) throw new Error('Browserless download error: ' + response.status);
-  const buffer = await response.arrayBuffer();
-  return Buffer.from(buffer);
+  if (!response.ok) throw new Error('Browserless error: ' + response.status);
+  const result = await response.json();
+  
+  // result.data is a base64 data URL like "data:image/jpeg;base64,..."
+  if (!result.data) throw new Error('No image data returned');
+  const base64 = result.data.split(',')[1];
+  return Buffer.from(base64, 'base64');
 }
 
 module.exports = async function(req, res) {
