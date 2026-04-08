@@ -8,30 +8,24 @@ cloudinary.config({
 
 const BROWSERLESS_TOKEN = '2UIT0JKjRg1QyJL56144746b3c0182241600035afc22d5600';
 
-async function getImageUrlViaBrowserless(pageUrl) {
-  // Use Browserless to get the page content and extract image src
-  const response = await fetch(`https://chrome.browserless.io/function?token=${BROWSERLESS_TOKEN}`, {
+async function downloadImageViaBrowserless(imageUrl) {
+  // Use Browserless /download endpoint to fetch the image as a real browser would
+  const response = await fetch(`https://chrome.browserless.io/download?token=${BROWSERLESS_TOKEN}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      code: `
-        module.exports = async ({ page }) => {
-          await page.goto('${pageUrl}', { waitUntil: 'networkidle2', timeout: 15000 });
-          // Get the main product image src
-          const imgSrc = await page.evaluate(() => {
-            const imgs = Array.from(document.querySelectorAll('img'));
-            const big = imgs.find(img => img.naturalWidth > 400 && img.src && img.src.startsWith('http'));
-            return big ? big.src : null;
-          });
-          return { data: imgSrc, type: 'application/json' };
-        };
-      `
+      url: imageUrl,
+      waitFor: 1000,
+      gotoOptions: {
+        waitUntil: 'networkidle2',
+        timeout: 15000
+      }
     })
   });
 
-  if (!response.ok) throw new Error('Browserless function error: ' + response.status);
-  const data = await response.json();
-  return data.data || null;
+  if (!response.ok) throw new Error('Browserless download error: ' + response.status);
+  const buffer = await response.arrayBuffer();
+  return Buffer.from(buffer);
 }
 
 module.exports = async function(req, res) {
@@ -45,16 +39,18 @@ module.exports = async function(req, res) {
   if (!body || !body.image_url) return res.status(400).json({ error: 'No image_url' });
 
   try {
-    // Get the actual image URL via Browserless
-    var actualImageUrl = await getImageUrlViaBrowserless(body.image_url);
-    if (!actualImageUrl) throw new Error('No image found on page');
+    var imageBuffer = await downloadImageViaBrowserless(body.image_url);
 
-    // Let Cloudinary fetch it directly
-    var result = await cloudinary.uploader.upload(actualImageUrl, {
-      folder: 'lighttrends',
-      resource_type: 'image',
-      transformation: [{ width: 600, height: 450, crop: 'fill', quality: 80 }],
-      timeout: 30000
+    var result = await new Promise(function(resolve, reject) {
+      var stream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'lighttrends',
+          resource_type: 'image',
+          transformation: [{ width: 600, height: 450, crop: 'fill', quality: 80 }]
+        },
+        function(error, result) { if (error) reject(error); else resolve(result); }
+      );
+      stream.end(imageBuffer);
     });
 
     return res.status(200).json({ cloudinary_url: result.secure_url });
