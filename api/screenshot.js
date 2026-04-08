@@ -9,7 +9,6 @@ cloudinary.config({
 const BROWSERLESS_TOKEN = '2UIT0JKjRg1QyJL56144746b3c0182241600035afc22d5600';
 
 async function getImageViaBrowserless(imageUrl) {
-  // Use Browserless to take a screenshot of the image URL
   const response = await fetch(`https://chrome.browserless.io/screenshot?token=${BROWSERLESS_TOKEN}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -17,14 +16,18 @@ async function getImageViaBrowserless(imageUrl) {
       url: imageUrl,
       options: {
         type: 'jpeg',
-        quality: 85,
-        fullPage: false
+        quality: 70
       },
       viewport: {
-        width: 800,
-        height: 600
+        width: 600,
+        height: 450,
+        deviceScaleFactor: 1
       },
-      waitFor: 2000
+      waitFor: 1000,
+      gotoOptions: {
+        waitUntil: 'networkidle2',
+        timeout: 10000
+      }
     })
   });
 
@@ -51,7 +54,7 @@ module.exports = async function(req, res) {
         {
           folder: 'lighttrends',
           resource_type: 'image',
-          transformation: [{ width: 600, height: 450, crop: 'fill', quality: 80 }]
+          transformation: [{ width: 600, height: 450, crop: 'fill', quality: 75 }]
         },
         function(error, result) { if (error) reject(error); else resolve(result); }
       );
