@@ -1,4 +1,6 @@
 const { v2: cloudinary } = require('cloudinary');
+const https = require('https');
+const http = require('http');
 
 cloudinary.config({
   cloud_name: 'dl8onsu6w',
@@ -8,44 +10,73 @@ cloudinary.config({
 
 const BROWSERLESS_TOKEN = '2UIT0JKjRg1QyJL56144746b3c0182241600035afc22d5600';
 
-async function downloadImageViaBrowserless(imageUrl) {
-  // Use Browserless /function to fetch just the image bytes with browser headers
-  const response = await fetch(`https://chrome.browserless.io/function?token=${BROWSERLESS_TOKEN}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+// Download image using Browserless as a proxy with real browser headers
+function downloadWithBrowserHeaders(imageUrl) {
+  return new Promise((resolve, reject) => {
+    // Call Browserless /function with NO page navigation - just pure Node.js fetch
+    const payload = JSON.stringify({
       code: `
-        const https = require('https');
-        const http = require('http');
-        
-        module.exports = async ({ page }) => {
-          // Use page.evaluate to fetch the image as a browser would
-          const imageData = await page.evaluate(async (url) => {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            return new Promise((resolve) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result);
-              reader.readAsDataURL(blob);
-            });
-          }, '${imageUrl}');
+        module.exports = async (context) => {
+          const https = require('https');
+          const url = '${imageUrl.replace(/'/g, "\\'")}';
           
-          return {
-            data: imageData,
-            type: 'application/json'
-          };
+          return new Promise((resolve, reject) => {
+            const options = {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Referer': 'https://www.marset.com/',
+                'sec-fetch-dest': 'image',
+                'sec-fetch-mode': 'no-cors',
+                'sec-fetch-site': 'same-origin'
+              }
+            };
+            
+            https.get(url, options, (res) => {
+              const chunks = [];
+              res.on('data', chunk => chunks.push(chunk));
+              res.on('end', () => {
+                const buffer = Buffer.concat(chunks);
+                resolve({
+                  data: buffer.toString('base64'),
+                  type: 'application/json'
+                });
+              });
+              res.on('error', reject);
+            }).on('error', reject);
+          });
         };
       `
-    })
-  });
+    });
 
-  if (!response.ok) throw new Error('Browserless error: ' + response.status);
-  const result = await response.json();
-  
-  // result.data is a base64 data URL like "data:image/jpeg;base64,..."
-  if (!result.data) throw new Error('No image data returned');
-  const base64 = result.data.split(',')[1];
-  return Buffer.from(base64, 'base64');
+    const urlObj = new URL('https://chrome.browserless.io/function?token=' + BROWSERLESS_TOKEN);
+    const req = https.request({
+      hostname: urlObj.hostname,
+      path: urlObj.pathname + urlObj.search,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(payload)
+      }
+    }, (res) => {
+      const chunks = [];
+      res.on('data', chunk => chunks.push(chunk));
+      res.on('end', () => {
+        try {
+          const body = JSON.parse(Buffer.concat(chunks).toString());
+          if (body.data) {
+            resolve(Buffer.from(body.data, 'base64'));
+          } else {
+            reject(new Error('No data in response: ' + JSON.stringify(body)));
+          }
+        } catch(e) { reject(e); }
+      });
+    });
+    req.on('error', reject);
+    req.write(payload);
+    req.end();
+  });
 }
 
 module.exports = async function(req, res) {
@@ -55,20 +86,17 @@ module.exports = async function(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  var body = req.body;
+  const body = req.body;
   if (!body || !body.image_url) return res.status(400).json({ error: 'No image_url' });
 
   try {
-    var imageBuffer = await downloadImageViaBrowserless(body.image_url);
-
-    var result = await new Promise(function(resolve, reject) {
-      var stream = cloudinary.uploader.upload_stream(
-        {
-          folder: 'lighttrends',
-          resource_type: 'image',
-          transformation: [{ width: 600, height: 450, crop: 'fill', quality: 80 }]
-        },
-        function(error, result) { if (error) reject(error); else resolve(result); }
+    const imageBuffer = await downloadWithBrowserHeaders(body.image_url);
+    
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: 'lighttrends', resource_type: 'image',
+          transformation: [{ width: 600, height: 450, crop: 'fill', quality: 80 }] },
+        (error, result) => error ? reject(error) : resolve(result)
       );
       stream.end(imageBuffer);
     });
