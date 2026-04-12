@@ -199,20 +199,27 @@ textarea{width:100%;padding:16px;border:none;font-size:13px;background:white;col
 <div class="toast" id="toast"></div>
 
 <script>
-const VERCEL_API = 'https://lighttrends.vercel.app/api/screenshot';
+const CLOUDINARY_CLOUD = 'dl8onsu6w';
+const CLOUDINARY_PRESET = 'lighttrends';
 
-async function uploadViaVercel(imageUrl) {
+async function uploadToCloudinary(imageUrl, folder) {
   try {
-    const res = await fetch(VERCEL_API, {
+    const res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD + '/image/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image_url: imageUrl })
+      body: JSON.stringify({
+        file: imageUrl,
+        upload_preset: CLOUDINARY_PRESET,
+        folder: folder || 'lighttrends'
+      })
     });
-    if (!res.ok) throw new Error('Vercel error ' + res.status);
+    if (!res.ok) throw new Error('Cloudinary error ' + res.status);
     const data = await res.json();
-    return data.cloudinary_url || null;
+    if (data.secure_url) return data.secure_url;
+    if (data.error) throw new Error(data.error.message);
+    return null;
   } catch(e) {
-    console.error('Vercel upload error:', e.message);
+    console.error('Cloudinary upload error:', e.message);
     return null;
   }
 }
@@ -317,7 +324,7 @@ async function uploadImagesAndRender(parsed) {
   for (var i = 0; i < parsed.posts.length; i++) {
     var p = parsed.posts[i];
     if (p.image) {
-      var cloudUrl = await uploadViaVercel(p.image);
+      var cloudUrl = await uploadToCloudinary(p.image, "lighttrends");
       if (cloudUrl) parsed.posts[i].image = cloudUrl;
     }
   }
