@@ -329,12 +329,20 @@ async function parseAndLoad() {
 async function uploadImagesAndRender(parsed) {
   var btn = document.getElementById('load-btn');
   btn.disabled = true;
-  btn.textContent = 'Subiendo imágenes...';
+  var total = parsed.posts.filter(function(p){return p.image;}).length;
+  var done = 0;
   for (var i = 0; i < parsed.posts.length; i++) {
     var p = parsed.posts[i];
     if (p.image) {
+      btn.textContent = 'Subiendo imagen ' + (done+1) + '/' + total + '...';
       var cloudUrl = await uploadToCloudinary(p.image, p.name, p.maker);
-      if (cloudUrl) parsed.posts[i].image = cloudUrl;
+      if (cloudUrl) {
+        parsed.posts[i].image = cloudUrl;
+        console.log('Subida OK:', cloudUrl);
+      } else {
+        console.warn('Fallo subida:', p.name, '- usando original:', p.image);
+      }
+      done++;
     }
   }
   btn.disabled = false;
