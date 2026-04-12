@@ -202,15 +202,24 @@ textarea{width:100%;padding:16px;border:none;font-size:13px;background:white;col
 const CLOUDINARY_CLOUD = 'dl8onsu6w';
 const CLOUDINARY_PRESET = 'lighttrends';
 
-async function uploadToCloudinary(imageUrl, folder) {
+async function uploadToCloudinary(imageUrl, name, maker) {
   try {
+    // Build public_id: nombre-fabricante (lowercase, no spaces)
+    var publicId = (name + '-' + maker)
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+
     const res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD + '/image/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         file: imageUrl,
         upload_preset: CLOUDINARY_PRESET,
-        folder: folder || 'lighttrends'
+        folder: 'lighttrends',
+        public_id: publicId,
+        overwrite: false
       })
     });
     if (!res.ok) throw new Error('Cloudinary error ' + res.status);
@@ -324,7 +333,7 @@ async function uploadImagesAndRender(parsed) {
   for (var i = 0; i < parsed.posts.length; i++) {
     var p = parsed.posts[i];
     if (p.image) {
-      var cloudUrl = await uploadToCloudinary(p.image, "lighttrends");
+      var cloudUrl = await uploadToCloudinary(p.image, p.name, p.maker);
       if (cloudUrl) parsed.posts[i].image = cloudUrl;
     }
   }
