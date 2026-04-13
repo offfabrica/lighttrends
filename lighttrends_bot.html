@@ -207,9 +207,10 @@ async function uploadToCloudinary(imageUrl, name, maker) {
     // Build public_id: nombre-fabricante (lowercase, no spaces)
     var publicId = (name + '-' + maker)
       .toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_|_$/g, '')
+      .substring(0, 60);
 
     const res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD + '/image/upload', {
       method: 'POST',
@@ -217,9 +218,7 @@ async function uploadToCloudinary(imageUrl, name, maker) {
       body: JSON.stringify({
         file: imageUrl,
         upload_preset: CLOUDINARY_PRESET,
-        folder: 'lighttrends',
-        public_id: publicId,
-        overwrite: false
+        public_id: 'lighttrends/' + publicId
       })
     });
     if (!res.ok) throw new Error('Cloudinary error ' + res.status);
