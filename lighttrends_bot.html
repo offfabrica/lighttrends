@@ -204,17 +204,26 @@ const CLOUDINARY_PRESET = 'lighttrends';
 
 async function uploadToCloudinary(imageUrl, name, maker) {
   try {
-    // Build public_id: nombre-fabricante (lowercase, no spaces)
-    var publicId = (name + '-' + maker)
-      .toLowerCase()
-      .normalize('NFD').replace(/[̀-ͯ]/g, '')
-      .replace(/[^a-z0-9]+/g, '_')
-      .replace(/^_|_$/g, '')
-      .substring(0, 60);
-
+    var folder = 'lighttrends/' + maker.toLowerCase().replace(/[^a-z0-9]/g, '_');
     const res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD + '/image/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        file: imageUrl,
+        upload_preset: CLOUDINARY_PRESET,
+        folder: folder
+      })
+    });
+    if (!res.ok) throw new Error('Cloudinary error ' + res.status);
+    const data = await res.json();
+    if (data.secure_url) return data.secure_url;
+    if (data.error) throw new Error(data.error.message);
+    return null;
+  } catch(e) {
+    console.error('Cloudinary upload error:', e.message);
+    return null;
+  }
+},
       body: JSON.stringify({
         file: imageUrl,
         upload_preset: CLOUDINARY_PRESET,
