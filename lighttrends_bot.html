@@ -28,6 +28,7 @@ body{font-family:'DM Sans',sans-serif;background:#f4f2ed;color:#1a1a18;min-heigh
 textarea{width:100%;padding:16px;border:none;font-size:13px;background:white;color:#1a1a18;font-family:monospace;resize:vertical;min-height:160px;outline:none;line-height:1.6}
 .load-btn{width:100%;padding:13px;background:#1a1a18;color:white;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity 0.15s}
 .load-btn:hover{opacity:0.85}
+.load-btn:disabled{opacity:0.5;cursor:not-allowed}
 .err-box{font-size:13px;color:#991b1b;background:#fef2f2;border:0.5px solid #fca5a5;border-radius:8px;padding:10px 14px;margin-top:10px;display:none}
 .approve-all-bar{background:white;border-radius:10px;border:0.5px solid #e0ddd5;padding:14px 18px;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .approve-summary{font-size:14px;font-weight:500}
@@ -129,15 +130,15 @@ textarea{width:100%;padding:16px;border:none;font-size:13px;background:white;col
 
   <div class="section active" id="tab-paste">
     <div class="page-title">Pegar el report de Claude</div>
-    <div class="page-sub">Pega el JSON del report con los posts e imágenes. Aprueba los que quieres incluir en el newsletter.</div>
+    <div class="page-sub">Pega el JSON del report. Las imágenes se guardan automáticamente en Cloudinary organizadas por fabricante.</div>
     <div class="paste-wrap">
       <div class="paste-topbar">
         <span class="paste-lbl">JSON del report</span>
         <button class="btn-sm btn-outline" style="padding:5px 10px;font-size:12px;" onclick="loadDemo()">Cargar demo</button>
       </div>
-      <textarea id="json-input" placeholder='{"date":"2 de abril de 2026","intro":"...","posts":[{"name":"Ringo","maker":"Marset","category":"interior","description":"...","image":"https://...","link":"https://..."}]}'></textarea>
+      <textarea id="json-input" placeholder='{"date":"15 de abril de 2026","intro":"...","posts":[{"name":"Gambosa","maker":"Marset","category":"interior","description":"...","image":"https://...","link":"https://..."}]}'></textarea>
     </div>
-    <button class="load-btn" id="load-btn" onclick="parseAndLoad()">Cargar y revisar posts →</button>
+    <button class="load-btn" id="load-btn" onclick="parseAndLoad()">Cargar y guardar imágenes en Cloudinary →</button>
     <div class="err-box" id="parse-error"></div>
   </div>
 
@@ -199,98 +200,27 @@ textarea{width:100%;padding:16px;border:none;font-size:13px;background:white;col
 <div class="toast" id="toast"></div>
 
 <script>
-const CLOUDINARY_CLOUD = 'dl8onsu6w';
-const CLOUDINARY_PRESET = 'lighttrends';
+var CLOUD = 'dl8onsu6w';
+var PRESET = 'lighttrends';
 
-async function uploadToCloudinary(imageUrl, name, maker) {
-  try {
-    var folder = 'lighttrends/' + maker.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    const res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD + '/image/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        file: imageUrl,
-        upload_preset: CLOUDINARY_PRESET,
-        folder: folder
-      })
-    });
-    if (!res.ok) throw new Error('Cloudinary error ' + res.status);
-    const data = await res.json();
-    if (data.secure_url) return data.secure_url;
-    if (data.error) throw new Error(data.error.message);
-    return null;
-  } catch(e) {
-    console.error('Cloudinary upload error:', e.message);
-    return null;
-  }
-},
-      body: JSON.stringify({
-        file: imageUrl,
-        upload_preset: CLOUDINARY_PRESET,
-        public_id: 'lighttrends/' + publicId
-      })
-    });
-    if (!res.ok) throw new Error('Cloudinary error ' + res.status);
-    const data = await res.json();
-    if (data.secure_url) return data.secure_url;
-    if (data.error) throw new Error(data.error.message);
-    return null;
-  } catch(e) {
-    console.error('Cloudinary upload error:', e.message);
-    return null;
-  }
-}
-
-const DEMO = {
-  date: "2 de abril de 2026",
-  intro: "Semana cargada de novedades: Marset presenta su catálogo 2026 con Ringo, Gambosa y Fris mientras Flos consolida My Circuit y SuperWire como referencias del mercado arquitectónico y decorativo.",
+var DEMO = {
+  date: "15 de abril de 2026",
+  intro: "Semana cargada de novedades: Marset presenta Gambosa en su catálogo 2026.",
   posts: [
     {
-      name: "Ringo",
-      maker: "Marset × Joan Gaspar",
-      category: "interior",
-      description: "Gran colgante de policarbonato que imita un bloque de hielo. Disponible en verde, rosé, smoke y dark smoke en 70 y 90 cm con tres temperaturas de color.",
-      image: "https://images.unsplash.com/photo-1524484485831-a92ffc0de03f?w=600&h=450&fit=crop&q=80",
-      link: "https://www.marset.com/en/indoor-lighting/pendant-lamps/ringo/"
-    },
-    {
       name: "Gambosa",
-      maker: "Marset × Mathias Hahn",
+      maker: "Marset",
       category: "interior",
-      description: "Lámpara de mesa escultórica cuya pantalla curva parece flotar sin conexión visible con el pie. En rosa pálido, negro opaco y metacrilato opal.",
-      image: "https://images.unsplash.com/photo-1507652313519-d4e9174996dd?w=600&h=450&fit=crop&q=80",
+      description: "Lámpara de mesa escultórica cuya pantalla curva parece flotar sin conexión visible con el pie.",
+      image: "https://unoiluminacion.com/wp-content/uploads/2025/12/web_MARSET_HR_GAMBOSA-M_BROWN-GREY-OPAL_CUT-OUT.webp",
       link: "https://www.marset.com/en/indoor-lighting/table-lamps/gambosa/"
-    },
-    {
-      name: "My Circuit",
-      maker: "Flos × Michael Anastassiades",
-      category: "arquitectonica",
-      description: "Sistema de iluminación arquitectónica modular con gestos infinitos de configuración en techo. Compatible con el proyector My Spot para integración total.",
-      image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=450&fit=crop&q=80",
-      link: "https://professional.flos.com/en/global/model/my-circuit-lines-model742/"
-    },
-    {
-      name: "SuperWire",
-      maker: "Flos × Formafantasma",
-      category: "interior",
-      description: "Sistema modular completamente reparable. Paneles de vidrio hexagonal y LED flexible sustituible sin devolver la lámpara al fabricante.",
-      image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&h=450&fit=crop&q=80",
-      link: "https://www.flos.com/en/us/superwire-formafantasma.html"
-    },
-    {
-      name: "Fris",
-      maker: "Marset × Joan Gaspar",
-      category: "arquitectonica",
-      description: "Líneas de luz flotantes en colgante, pared y techo. El tubo de vidrio rota manualmente entre luz directa y ambiente. Composiciones infinitas.",
-      image: "https://images.unsplash.com/photo-1486946255434-2466348c2166?w=600&h=450&fit=crop&q=80",
-      link: "https://www.marset.com/en/indoor-lighting/pendant-lamps/fris/"
     }
   ]
 };
 
-let reportData = null;
-let postStates = {};
-let contacts = [];
+var reportData = null;
+var postStates = {};
+var contacts = [];
 
 function initApp() {
   document.getElementById('email-input').addEventListener('keydown', function(e) {
@@ -307,74 +237,90 @@ function switchTab(tab) {
 
 function loadDemo() {
   document.getElementById('json-input').value = JSON.stringify(DEMO, null, 2);
-  showToast('Demo cargado — pulsa "Cargar y revisar"');
+  showToast('Demo cargado');
+}
+
+async function uploadImage(imageUrl, maker) {
+  var folder = 'lighttrends/' + (maker || 'general').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+  var res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUD + '/image/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      file: imageUrl,
+      upload_preset: PRESET,
+      folder: folder
+    })
+  });
+  var data = await res.json();
+  if (data.secure_url) return data.secure_url;
+  throw new Error(data.error ? data.error.message : 'Upload failed');
 }
 
 async function parseAndLoad() {
   var raw = document.getElementById('json-input').value.trim();
   var errEl = document.getElementById('parse-error');
+  var btn = document.getElementById('load-btn');
   errEl.style.display = 'none';
+
   if (!raw) { errEl.textContent = 'El campo está vacío.'; errEl.style.display = 'block'; return; }
+
+  var parsed;
   try {
     var clean = raw.replace(/```json|```/g, '').trim();
-    var match = clean.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('No se encontró JSON válido');
-    var parsed = JSON.parse(match[0]);
+    var m = clean.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('No se encontró JSON válido');
+    parsed = JSON.parse(m[0]);
     var posts = parsed.posts || parsed.trends;
     if (!posts || !Array.isArray(posts)) throw new Error('No se encontró el array de posts');
     parsed.posts = posts;
-    reportData = parsed;
-    postStates = {};
-    posts.forEach(function(_, i) { postStates[i] = 'pending'; });
-    // Upload images via Vercel
-    uploadImagesAndRender(parsed);
   } catch(e) {
     errEl.textContent = 'Error: ' + e.message;
     errEl.style.display = 'block';
+    return;
   }
-}
 
-async function uploadImagesAndRender(parsed) {
-  var btn = document.getElementById('load-btn');
+  var withImage = parsed.posts.filter(function(p) { return p.image; });
   btn.disabled = true;
-  var total = parsed.posts.filter(function(p){return p.image;}).length;
-  var done = 0;
+
   for (var i = 0; i < parsed.posts.length; i++) {
     var p = parsed.posts[i];
-    if (p.image) {
-      btn.textContent = 'Subiendo imagen ' + (done+1) + '/' + total + '...';
-      var cloudUrl = await uploadToCloudinary(p.image, p.name, p.maker);
-      if (cloudUrl) {
-        parsed.posts[i].image = cloudUrl;
-        console.log('Subida OK:', cloudUrl);
-      } else {
-        console.warn('Fallo subida:', p.name, '- usando original:', p.image);
-      }
-      done++;
+    if (!p.image) continue;
+    var idx = withImage.indexOf(p) + 1;
+    btn.textContent = 'Guardando imagen ' + idx + '/' + withImage.length + '...';
+    try {
+      var url = await uploadImage(p.image, p.maker);
+      parsed.posts[i].image = url;
+    } catch(e) {
+      console.warn('Error subiendo imagen de ' + p.name + ':', e.message);
     }
   }
+
   btn.disabled = false;
-  btn.textContent = 'Cargar y revisar posts →';
+  btn.textContent = 'Cargar y guardar imágenes en Cloudinary →';
+
+  reportData = parsed;
+  postStates = {};
+  parsed.posts.forEach(function(_, i) { postStates[i] = 'pending'; });
   renderReview();
   switchTab('review');
-  showToast('Posts cargados con imágenes');
+  showToast('Posts cargados con imágenes guardadas en Cloudinary');
 }
 
 function catClass(c) {
   if (!c) return 'news';
   var v = c.toLowerCase();
-  if (v.includes('inter') || v.includes('decor')) return 'inter';
-  if (v.includes('arquit')) return 'arch';
-  if (v.includes('exter') || v.includes('urban')) return 'ext';
+  if (v.indexOf('inter') >= 0 || v.indexOf('decor') >= 0) return 'inter';
+  if (v.indexOf('arquit') >= 0) return 'arch';
+  if (v.indexOf('exter') >= 0 || v.indexOf('urban') >= 0) return 'ext';
   return 'news';
 }
 
 function catLabel(c) {
   if (!c) return 'Sector';
   var v = c.toLowerCase();
-  if (v.includes('inter') || v.includes('decor')) return 'Interior';
-  if (v.includes('arquit')) return 'Arquitectónica';
-  if (v.includes('exter') || v.includes('urban')) return 'Exterior';
+  if (v.indexOf('inter') >= 0 || v.indexOf('decor') >= 0) return 'Interior';
+  if (v.indexOf('arquit') >= 0) return 'Arquitectónica';
+  if (v.indexOf('exter') >= 0 || v.indexOf('urban') >= 0) return 'Exterior';
   return 'Sector';
 }
 
