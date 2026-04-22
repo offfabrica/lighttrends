@@ -240,15 +240,19 @@ function loadDemo() {
   showToast('Demo cargado');
 }
 
-async function uploadImage(imageUrl, maker) {
-  var folder = 'lighttrends/' + (maker || 'general').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+async function uploadImage(imageUrl, name, maker) {
+  var publicId = 'lighttrends/' + (name + '-' + maker)
+    .toLowerCase()
+    .replace(/[àáâãäå]/g, 'a').replace(/[èéêë]/g, 'e').replace(/[ìíîï]/g, 'i')
+    .replace(/[òóôõö]/g, 'o').replace(/[ùúûü]/g, 'u').replace(/[ñ]/g, 'n')
+    .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
   var res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUD + '/image/upload', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       file: imageUrl,
       upload_preset: PRESET,
-      folder: folder
+      public_id: publicId
     })
   });
   var data = await res.json();
@@ -288,7 +292,7 @@ async function parseAndLoad() {
     var idx = withImage.indexOf(p) + 1;
     btn.textContent = 'Guardando imagen ' + idx + '/' + withImage.length + '...';
     try {
-      var url = await uploadImage(p.image, p.maker);
+      var url = await uploadImage(p.image, p.name, p.maker);
       parsed.posts[i].image = url;
     } catch(e) {
       console.warn('Error subiendo imagen de ' + p.name + ':', e.message);
