@@ -255,15 +255,28 @@ function loadDemo() {
   showToast('Demo cargado');
 }
 
-async function uploadImage(imageUrl, name, maker) {
-  var folder = 'lighttrends/' + (maker || 'general').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+async function uploadImage(imageUrl, name, maker, designer) {
+  // Folder: lighttrends/fabricante
+  var folder = 'lighttrends/' + (maker || 'general').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+
+  // Public ID: fabricante-nombreproducto-designer
+  var parts = [maker, name, designer].filter(Boolean);
+  var publicId = parts.map(function(p) {
+    return p.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  }).join('-');
+
   var res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUD + '/image/upload', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       file: imageUrl,
       upload_preset: PRESET,
-      folder: folder
+      folder: folder,
+      public_id: publicId
     })
   });
   var data = await res.json();
@@ -283,7 +296,7 @@ async function handleImageInput(i, inputEl, btnEl, statusEl, imgWrapEl) {
 
   try {
     var p = reportData.posts[i];
-    var cloudUrl = await uploadImage(url, p.name, p.maker);
+    var cloudUrl = await uploadImage(url, p.name, p.maker, p.designer);
     reportData.posts[i].image = cloudUrl;
 
     // Update card image
