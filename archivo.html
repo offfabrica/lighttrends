@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LightTrends · Archivo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f4f2ed;
+  --ink:#1a1a18;
+  --ink-light:#888;
+  --border:#e0ddd5;
+  --green:#0F6E56;
+  --card:#fff;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+/* HEADER */
+.header{background:var(--ink);color:white;padding:3rem 2rem 2.5rem}
+.header-inner{max-width:960px;margin:0 auto}
+.header-eyebrow{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:12px}
+.header-title{font-family:'DM Serif Display',serif;font-size:clamp(36px,6vw,64px);font-weight:400;line-height:1.05;margin-bottom:10px}
+.header-title em{font-style:italic;color:rgba(255,255,255,0.5)}
+.header-sub{font-size:14px;color:rgba(255,255,255,0.5);line-height:1.6;max-width:480px}
+.header-meta{display:flex;align-items:center;gap:24px;margin-top:2rem;padding-top:2rem;border-top:0.5px solid rgba(255,255,255,0.1)}
+.header-count{font-size:13px;color:rgba(255,255,255,0.4)}
+.header-count strong{color:white;font-weight:500}
+.back-link{font-size:13px;color:rgba(255,255,255,0.4);text-decoration:none;display:flex;align-items:center;gap:6px;transition:color 0.15s}
+.back-link:hover{color:white}
+
+/* MAIN */
+.main{max-width:960px;margin:0 auto;padding:3rem 2rem}
+
+/* YEAR SECTION */
+.year-section{margin-bottom:3rem}
+.year-label{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-light);margin-bottom:1.2rem;display:flex;align-items:center;gap:12px}
+.year-label::after{content:'';flex:1;height:0.5px;background:var(--border)}
+
+/* GRID */
+.nl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+
+/* CARD */
+.nl-card{background:var(--card);border-radius:12px;border:0.5px solid var(--border);overflow:hidden;text-decoration:none;color:var(--ink);transition:all 0.2s;display:flex;flex-direction:column}
+.nl-card:hover{border-color:var(--ink);box-shadow:0 4px 24px rgba(0,0,0,0.08);transform:translateY(-2px)}
+.nl-card-img{width:100%;height:160px;background:linear-gradient(135deg,#e8e4dc,#d4cfc5);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.nl-card-img img{width:100%;height:100%;object-fit:cover}
+.nl-card-img-ph{font-size:32px;opacity:0.3}
+.nl-card-num{position:absolute;top:10px;right:10px;background:var(--ink);color:white;font-size:10px;font-weight:500;padding:3px 8px;border-radius:20px}
+.nl-card-body{padding:16px;flex:1;display:flex;flex-direction:column}
+.nl-card-date{font-size:11px;color:var(--ink-light);margin-bottom:6px;letter-spacing:0.02em}
+.nl-card-title{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;line-height:1.2;margin-bottom:8px}
+.nl-card-intro{font-size:12px;color:#666;line-height:1.6;flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.nl-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:0.5px solid var(--border)}
+.nl-card-posts{font-size:11px;color:var(--ink-light)}
+.nl-card-arrow{font-size:14px;color:var(--green)}
+
+/* ADD CARD */
+.nl-card-add{border:1.5px dashed var(--border);background:transparent;cursor:pointer;align-items:center;justify-content:center;text-align:center;padding:2rem;min-height:200px;gap:10px;color:var(--ink-light);transition:all 0.2s}
+.nl-card-add:hover{border-color:var(--ink);color:var(--ink);background:white}
+.nl-card-add-icon{font-size:24px;margin-bottom:8px}
+.nl-card-add-text{font-size:13px;font-weight:500}
+.nl-card-add-sub{font-size:11px;opacity:0.7;margin-top:4px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity 0.2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:white;border-radius:16px;padding:2rem;width:90%;max-width:480px;position:relative}
+.modal-title{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;margin-bottom:6px}
+.modal-sub{font-size:13px;color:#888;margin-bottom:1.5rem;line-height:1.5}
+.modal-field{margin-bottom:14px}
+.modal-label{font-size:12px;font-weight:500;color:#555;margin-bottom:5px;display:block}
+.modal-input{width:100%;padding:10px 13px;border:0.5px solid #e0ddd5;border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:#1a1a18;outline:none;background:#f9f8f5}
+.modal-input:focus{border-color:#1a1a18;background:white}
+.modal-textarea{min-height:80px;resize:vertical}
+.modal-actions{display:flex;gap:8px;margin-top:1.5rem}
+.btn{padding:11px 20px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;transition:all 0.15s}
+.btn-primary{background:#1a1a18;color:white}.btn-primary:hover{opacity:0.85}
+.btn-secondary{background:transparent;border:0.5px solid #ccc;color:#1a1a18}.btn-secondary:hover{background:#f0ede6}
+.btn-danger{background:#fef2f2;color:#991b1b;border:0.5px solid #fca5a5}.btn-danger:hover{background:#fde8e8}
+
+/* EMPTY */
+.empty{text-align:center;padding:5rem 2rem;color:#aaa}
+.empty-title{font-family:'DM Serif Display',serif;font-size:24px;font-weight:400;color:#1a1a18;margin:16px 0 8px}
+.empty-sub{font-size:14px;line-height:1.6;max-width:320px;margin:0 auto}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a18;color:white;font-size:13px;padding:11px 22px;border-radius:8px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-eyebrow">LightTrends</div>
+    <div class="header-title">Archivo de<br><em>Newsletters</em></div>
+    <div class="header-sub">Todas las ediciones del newsletter semanal de tendencias en iluminación.</div>
+    <div class="header-meta">
+      <span class="header-count"><strong id="total-count">0</strong> ediciones publicadas</span>
+      <a href="lighttrends_bot.html" class="back-link">← Volver a la app</a>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div id="archive-content"></div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title">Añadir newsletter</div>
+    <div class="modal-sub">Añade los datos del newsletter exportado esta semana.</div>
+    <div class="modal-field">
+      <label class="modal-label">Fecha</label>
+      <input class="modal-input" id="m-date" type="text" placeholder="24 de abril de 2026"/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Título / tema de la semana</label>
+      <input class="modal-input" id="m-title" type="text" placeholder="Salone del Mobile 2026"/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Intro (opcional)</label>
+      <textarea class="modal-input modal-textarea" id="m-intro" placeholder="Descripción breve de esta edición..."></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Número de posts</label>
+      <input class="modal-input" id="m-posts" type="number" placeholder="5" min="1" max="20"/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">URL del newsletter (opcional)</label>
+      <input class="modal-input" id="m-url" type="text" placeholder="https://..."/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">URL imagen de portada (opcional)</label>
+      <input class="modal-input" id="m-img" type="text" placeholder="https://res.cloudinary.com/..."/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="saveNewsletter()">Guardar</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var STORAGE_KEY = 'lighttrends_archive';
+
+function loadArchive() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch(e) { return []; }
+}
+
+function saveArchive(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function renderArchive() {
+  var data = loadArchive();
+  var container = document.getElementById('archive-content');
+  document.getElementById('total-count').textContent = data.length;
+
+  if (data.length === 0) {
+    container.innerHTML = '<div class="empty">' +
+      '<div style="font-size:48px">💡</div>' +
+      '<div class="empty-title">Sin newsletters todavía</div>' +
+      '<div class="empty-sub">Genera tu primer newsletter en la app y añádelo aquí.</div>' +
+      '</div>' +
+      '<div class="nl-grid" style="margin-top:2rem">' + addCardHTML() + '</div>';
+    return;
+  }
+
+  // Group by year
+  var byYear = {};
+  data.forEach(function(nl) {
+    var year = nl.year || '2026';
+    if (!byYear[year]) byYear[year] = [];
+    byYear[year].push(nl);
+  });
+
+  var years = Object.keys(byYear).sort(function(a,b){ return b-a; });
+  var html = '';
+  years.forEach(function(year) {
+    var nls = byYear[year].sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
+    html += '<div class="year-section">';
+    html += '<div class="year-label">' + year + '</div>';
+    html += '<div class="nl-grid">';
+    nls.forEach(function(nl) {
+      html += newsletterCardHTML(nl);
+    });
+    html += addCardHTML();
+    html += '</div></div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function newsletterCardHTML(nl) {
+  var imgContent = nl.image
+    ? '<img src="' + nl.image + '" alt="' + nl.title + '" onerror="this.style.display=\'none\'">'
+    : '<div class="nl-card-img-ph">💡</div>';
+  var num = nl.posts ? nl.posts + ' post' + (nl.posts > 1 ? 's' : '') : '';
+  var card = '<div class="nl-card" onclick="openNewsletter(\'' + nl.id + '\')" style="cursor:pointer">' +
+    '<div class="nl-card-img">' + imgContent + '<span class="nl-card-num">#' + nl.index + '</span></div>' +
+    '<div class="nl-card-body">' +
+    '<div class="nl-card-date">' + nl.date + '</div>' +
+    '<div class="nl-card-title">' + nl.title + '</div>' +
+    (nl.intro ? '<div class="nl-card-intro">' + nl.intro + '</div>' : '') +
+    '<div class="nl-card-footer">' +
+    '<span class="nl-card-posts">' + num + '</span>' +
+    '<span class="nl-card-arrow">→</span>' +
+    '</div></div>' +
+    '<div style="padding:0 16px 14px;display:flex;gap:8px">' +
+    (nl.url ? '<button class="btn btn-secondary" style="font-size:11px;padding:5px 10px" onclick="event.stopPropagation();window.open(\'' + nl.url + '\',\'_blank\')">Ver newsletter</button>' : '') +
+    '<button class="btn btn-danger" style="font-size:11px;padding:5px 10px" onclick="event.stopPropagation();deleteNewsletter(\'' + nl.id + '\')">Eliminar</button>' +
+    '</div></div>';
+  return card;
+}
+
+function addCardHTML() {
+  return '<div class="nl-card nl-card-add" onclick="openModal()">' +
+    '<div class="nl-card-add-icon">+</div>' +
+    '<div class="nl-card-add-text">Añadir newsletter</div>' +
+    '<div class="nl-card-add-sub">Añade el report de esta semana</div>' +
+    '</div>';
+}
+
+function openModal() {
+  // Set today's date as default
+  var today = new Date();
+  var months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  document.getElementById('m-date').value = today.getDate() + ' de ' + months[today.getMonth()] + ' de ' + today.getFullYear();
+  document.getElementById('m-title').value = '';
+  document.getElementById('m-intro').value = '';
+  document.getElementById('m-posts').value = '';
+  document.getElementById('m-url').value = '';
+  document.getElementById('m-img').value = '';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+}
+
+function saveNewsletter() {
+  var date = document.getElementById('m-date').value.trim();
+  var title = document.getElementById('m-title').value.trim();
+  if (!date || !title) { showToast('Fecha y título son obligatorios'); return; }
+
+  var data = loadArchive();
+  var year = date.match(/\d{4}/);
+  var nl = {
+    id: Date.now().toString(),
+    date: date,
+    title: title,
+    intro: document.getElementById('m-intro').value.trim(),
+    posts: parseInt(document.getElementById('m-posts').value) || 0,
+    url: document.getElementById('m-url').value.trim(),
+    image: document.getElementById('m-img').value.trim(),
+    year: year ? year[0] : '2026',
+    index: data.length + 1,
+    createdAt: new Date().toISOString()
+  };
+
+  data.push(nl);
+  saveArchive(data);
+  closeModal();
+  renderArchive();
+  showToast('Newsletter añadido al archivo ✓');
+}
+
+function deleteNewsletter(id) {
+  if (!confirm('¿Eliminar este newsletter del archivo?')) return;
+  var data = loadArchive().filter(function(nl) { return nl.id !== id; });
+  saveArchive(data);
+  renderArchive();
+  showToast('Newsletter eliminado');
+}
+
+function openNewsletter(id) {
+  var data = loadArchive();
+  var nl = data.find(function(n) { return n.id === id; });
+  if (nl && nl.url) window.open(nl.url, '_blank');
+  else showToast('Este newsletter no tiene URL asociada');
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+renderArchive();
+</script>
+</body>
+</html>
