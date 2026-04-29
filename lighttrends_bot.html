@@ -261,13 +261,18 @@ async function uploadImage(imageUrl, name, maker, designer) {
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 
-  // Public ID: fabricante-nombreproducto-designer
-  var parts = [maker, name, designer].filter(Boolean);
-  var publicId = parts.map(function(p) {
-    return p.toLowerCase()
+  // Public ID: fabricante-nombreproducto-designertodojunto
+  function slugify(s) {
+    return (s || '').toLowerCase()
       .normalize('NFD').replace(/[̀-ͯ]/g, '')
       .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
-  }).join('-');
+  }
+  function slugifyNoSpace(s) {
+    return (s || '').toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+  }
+  var publicId = [slugify(maker), slugify(name), slugifyNoSpace(designer)].filter(Boolean).join('-');
 
   var res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUD + '/image/upload', {
     method: 'POST',
@@ -522,9 +527,12 @@ function copyText() {
 }
 
 function exportNewsletter() {
-  var date = (reportData && reportData.date) ? reportData.date : new Date().toISOString().split('T')[0];
-  var slug = date.replace(/\s+/g, '-').replace(/[^a-z0-9-]/gi, '').toLowerCase();
-  var filename = 'newsletter-' + slug + '.html';
+  // Format: news28042026
+  var today = new Date();
+  var dd = String(today.getDate()).padStart(2, '0');
+  var mm = String(today.getMonth() + 1).padStart(2, '0');
+  var yyyy = today.getFullYear();
+  var filename = 'news' + dd + mm + yyyy + '.html';
   var body = document.getElementById('nl-body').innerHTML;
   var html = '<!DOCTYPE html>\n<html lang="es">\n<head>\n<meta charset="UTF-8"/>\n<meta name="viewport" content="width=device-width, initial-scale=1.0"/>\n<title>LightTrends · ' + date + '</title>\n<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>\n<style>\nbody{font-family:\'DM Sans\',sans-serif;background:#f4f2ed;color:#1a1a18;margin:0;padding:2rem}\n.nl-body{max-width:680px;margin:0 auto;background:white;padding:2.5rem 2rem;border-radius:12px}\n.nl-eyebrow{font-size:10px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:#888;margin-bottom:8px}\n.nl-main-title{font-family:\'DM Serif Display\',serif;font-size:30px;font-weight:400;line-height:1.15;margin-bottom:6px}\n.nl-date-line{font-size:13px;color:#888}\n.nl-rule{height:1px;background:#e0ddd5;margin:1.5rem 0}\n.nl-intro-text{font-size:14px;line-height:1.8;color:#444;margin-bottom:2rem}\n.nl-section-lbl{font-size:10px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:#aaa;margin-bottom:1rem}\n.nl-post{display:flex;gap:18px;padding:18px 0;border-bottom:0.5px solid #e0ddd5;align-items:flex-start}\n.nl-post:last-child{border-bottom:none}\n.nl-post-img{width:110px;height:82px;object-fit:cover;border-radius:8px;flex-shrink:0}\n.nl-post-ph{width:110px;height:82px;border-radius:8px;flex-shrink:0;background:#edeae3;display:flex;align-items:center;justify-content:center;font-size:22px;color:#bbb}\n.nl-post-content{flex:1;min-width:0}\n.nl-post-name{font-size:15px;font-weight:500;margin-bottom:2px}\n.nl-post-maker{font-size:12px;color:#888;margin-bottom:6px}\n.nl-post-desc{font-size:13px;color:#555;line-height:1.7;margin-bottom:8px}\n.nl-post-link{font-size:12px;color:#0F6E56;text-decoration:none}\n.nl-footer-block{margin-top:1.5rem;padding-top:1rem;border-top:0.5px solid #e0ddd5;font-size:12px;color:#aaa}\n</style>\n</head>\n<body>\n<div class="nl-body">' + body + '</div>\n</body>\n</html>';
   var blob = new Blob([html], { type: 'text/html' });
