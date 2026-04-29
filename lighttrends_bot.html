@@ -256,23 +256,19 @@ function loadDemo() {
 }
 
 async function uploadImage(imageUrl, name, maker, designer) {
-  // Folder: lighttrends/fabricante
-  var folder = 'lighttrends/' + (maker || 'general').toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+  var folder = 'lighttrends/' + (maker || 'general').toLowerCase().replace(/[^a-z0-9]/gi, '').toLowerCase();
 
-  // Public ID: fabricante-nombreproducto-designertodojunto
-  function slugify(s) {
+  function clean(s) {
     return (s || '').toLowerCase()
-      .normalize('NFD').replace(/[̀-ͯ]/g, '')
-      .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      .replace(/à|á|â|ã|ä/g, 'a').replace(/è|é|ê|ë/g, 'e')
+      .replace(/ì|í|î|ï/g, 'i').replace(/ò|ó|ô|õ|ö/g, 'o')
+      .replace(/ù|ú|û|ü/g, 'u').replace(/ñ/g, 'n');
   }
-  function slugifyNoSpace(s) {
-    return (s || '').toLowerCase()
-      .normalize('NFD').replace(/[̀-ͯ]/g, '')
-      .replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
-  }
-  var publicId = [slugify(maker), slugify(name), slugifyNoSpace(designer)].filter(Boolean).join('-');
+
+  var makerSlug = clean(maker).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  var nameSlug = clean(name).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  var designerSlug = clean(designer).replace(/[^a-z0-9]+/g, '');
+  var publicId = [makerSlug, nameSlug, designerSlug].filter(Boolean).join('-');
 
   var res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUD + '/image/upload', {
     method: 'POST',
