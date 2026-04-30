@@ -277,7 +277,8 @@ async function uploadImage(imageUrl, name, maker, designer) {
       file: imageUrl,
       upload_preset: PRESET,
       folder: folder,
-      public_id: publicId
+      public_id: publicId,
+      display_name: publicId
     })
   });
   var data = await res.json();
