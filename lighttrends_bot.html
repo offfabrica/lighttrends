@@ -399,6 +399,10 @@ function renderReview() {
       '<span class="img-status" id="imgstatus-' + i + '" style="display:none"></span>' +
       '<button class="img-upload-btn" id="imgbtn-' + i + '" onclick="handleImageInput(' + i + ', document.getElementById(\'imginput-' + i + '\'), document.getElementById(\'imgbtn-' + i + '\'), document.getElementById(\'imgstatus-' + i + '\'), document.getElementById(\'imgwrap-' + i + '\'))">Guardar</button>' +
       '</div>' +
+      '<div class="img-input-row" style="padding-top:0">' +
+      '<input class="img-input" id="linkinput-' + i + '" type="text" placeholder="URL del producto..." />' +
+      '<button class="img-upload-btn" onclick="saveLink(' + i + ')">Link</button>' +
+      '</div>' +
       '<div class="post-actions">' +
       '<button class="action-btn approve-btn" id="abtn-' + i + '" onclick="setState(' + i + ',\'approved\')">' +
       '<svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Aprobar</button>' +
@@ -420,6 +424,11 @@ function renderReview() {
   });
 
   updateSummary();
+  // Pre-fill link inputs
+  reportData.posts.forEach(function(p, i) {
+    var linkinput = document.getElementById('linkinput-' + i);
+    if (linkinput && p.link) linkinput.value = p.link;
+  });
 }
 
 function setState(i, state) {
@@ -539,6 +548,17 @@ function exportNewsletter() {
   a.click();
   URL.revokeObjectURL(a.href);
   showToast('Newsletter exportado: ' + filename);
+}
+
+function saveLink(i) {
+  var input = document.getElementById('linkinput-' + i);
+  var url = input.value.trim();
+  if (!url) return;
+  reportData.posts[i].link = url;
+  // Update displayed link
+  var linkEl = document.querySelector('#card-' + i + ' .post-link');
+  if (linkEl) { linkEl.href = url; linkEl.textContent = '→ ' + url; }
+  showToast('Link actualizado');
 }
 
 function exportGalleryJSON() {
