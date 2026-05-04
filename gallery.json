@@ -1,1 +1,29 @@
-[]
+[
+  {
+    "url": "https://res.cloudinary.com/dl8onsu6w/image/upload/v1777898863/lighttrends/flos/flos-maap.webp",
+    "publicId": "https://res.cloudinary.com/dl8onsu6w/image/upload/v1777898863/lighttrends/flos/flos-maap.webp",
+    "name": "Maap",
+    "maker": "Flos",
+    "designer": "",
+    "category": "interior",
+    "date": "23 de abril de 2026"
+  },
+  {
+    "url": "https://res.cloudinary.com/dl8onsu6w/image/upload/v1777898883/lighttrends/marset/marset-ringo.jpg",
+    "publicId": "https://res.cloudinary.com/dl8onsu6w/image/upload/v1777898883/lighttrends/marset/marset-ringo.jpg",
+    "name": "Ringo",
+    "maker": "Marset",
+    "designer": "",
+    "category": "interior",
+    "date": "23 de abril de 2026"
+  },
+  {
+    "url": "https://res.cloudinary.com/dl8onsu6w/image/upload/v1777898920/lighttrends/marset/marset-followme.jpg",
+    "publicId": "https://res.cloudinary.com/dl8onsu6w/image/upload/v1777898920/lighttrends/marset/marset-followme.jpg",
+    "name": "FollowMe",
+    "maker": "Marset",
+    "designer": "",
+    "category": "interior",
+    "date": "23 de abril de 2026"
+  }
+]
