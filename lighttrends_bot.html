@@ -187,6 +187,7 @@ textarea{width:100%;padding:16px;border:none;font-size:13px;background:white;col
         <button class="btn-sm btn-outline" onclick="copyHTML()">Copiar HTML</button>
         <button class="btn-sm btn-outline" onclick="copyText()">Copiar texto</button>
         <button class="btn-sm btn-dark" onclick="exportNewsletter()">⬇ Exportar HTML</button>
+        <button class="btn-sm btn-outline" onclick="exportGalleryJSON()">📁 Publicar en galería</button>
       </div>
       <div class="nl-frame">
         <div class="nl-frame-bar">
@@ -538,6 +539,46 @@ function exportNewsletter() {
   a.click();
   URL.revokeObjectURL(a.href);
   showToast('Newsletter exportado: ' + filename);
+}
+
+function exportGalleryJSON() {
+  var existing = [];
+  try {
+    var stored = localStorage.getItem('lr_gallery');
+    if (stored) existing = JSON.parse(stored);
+  } catch(e) {}
+
+  // Add approved posts with images to gallery
+  if (reportData) {
+    reportData.posts.forEach(function(p) {
+      if (p.image && p.image.indexOf('cloudinary') >= 0) {
+        // Check if already exists
+        var exists = existing.find(function(e) { return e.publicId === p.image; });
+        if (!exists) {
+          existing.push({
+            url: p.image,
+            publicId: p.image,
+            name: p.name || '',
+            maker: p.maker || '',
+            designer: p.designer || '',
+            category: p.category || 'interior',
+            date: reportData.date || ''
+          });
+        }
+      }
+    });
+  }
+
+  localStorage.setItem('lr_gallery', JSON.stringify(existing));
+
+  // Download gallery.json
+  var blob = new Blob([JSON.stringify(existing, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'gallery.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('gallery.json descargado — súbelo a GitHub');
 }
 
 function showToast(msg) {

@@ -267,16 +267,31 @@ async function fetchCloudinaryFolder(folder) {
 }
 
 async function loadGallery() {
-  var all = [];
-  for (var i = 0; i < FOLDERS.length; i++) {
-    var items = await fetchCloudinaryFolder(FOLDERS[i]);
-    all = all.concat(items);
+  var container = document.getElementById('gallery-container');
+  try {
+    var res = await fetch('gallery.json?v=' + Date.now());
+    if (!res.ok) throw new Error('No gallery.json found');
+    var data = await res.json();
+    allImages = data.map(function(item) {
+      return {
+        url: item.url,
+        urlFull: item.url,
+        publicId: item.publicId || item.url,
+        name: item.name || '',
+        maker: item.maker || '',
+        designer: item.designer || '',
+        category: item.category || 'interior',
+        date: item.date || ''
+      };
+    });
+  } catch(e) {
+    console.warn('gallery.json not found:', e.message);
+    allImages = [];
   }
-  allImages = all;
 
   // Update stats
-  var brands = new Set(all.map(function(i) { return i.maker; }));
-  document.getElementById('stat-images').textContent = all.length;
+  var brands = new Set(allImages.map(function(i) { return i.maker; }));
+  document.getElementById('stat-images').textContent = allImages.length;
   document.getElementById('stat-brands').textContent = brands.size;
 
   renderGallery();
