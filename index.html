@@ -207,27 +207,53 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 <div class="toast" id="toast"></div>
 
 <script>
+var CLOUD = 'dl8onsu6w';
+var GALLERY_TAG = 'lighttrends-gallery';
 var allImages = [];
 var currentFilter = 'all';
 
+// Parsea el string de context guardado al subir: "name=X|maker=Y|..."
+function parseContext(ctx) {
+  var out = {};
+  if (!ctx) return out;
+  // Cloudinary puede devolver context como objeto {custom:{...}} o como string plano
+  if (typeof ctx === 'object') {
+    return ctx.custom || ctx;
+  }
+  ctx.split('|').forEach(function(pair) {
+    var idx = pair.indexOf('=');
+    if (idx === -1) return;
+    var key = pair.slice(0, idx);
+    var val = pair.slice(idx + 1);
+    out[key] = val;
+  });
+  return out;
+}
+
 async function loadGallery() {
   try {
-    var res = await fetch('gallery.json?v=' + Date.now());
-    if (!res.ok) throw new Error('No gallery.json');
+    var res = await fetch('https://res.cloudinary.com/' + CLOUD + '/image/list/' + GALLERY_TAG + '.json?v=' + Date.now());
+    if (!res.ok) throw new Error('Cloudinary resource list no disponible (¿Resource list habilitado en Settings → Security?)');
     var data = await res.json();
-    allImages = data.map(function(item) {
+    var resources = data.resources || [];
+    allImages = resources.map(function(item) {
+      var ctx = parseContext(item.context);
+      var url = 'https://res.cloudinary.com/' + CLOUD + '/image/upload/' + item.public_id + '.' + item.format;
       return {
-        url: item.url,
-        name: item.name || '',
-        maker: item.maker || '',
-        designer: item.designer || '',
-        description: item.description || '',
-        category: item.category || 'interior',
-        link: item.link || '',
-        date: item.date || ''
+        url: url,
+        name: ctx.name || item.public_id,
+        maker: ctx.maker || '',
+        designer: ctx.designer || '',
+        description: ctx.description || '',
+        category: ctx.category || 'interior',
+        link: ctx.link || '',
+        createdAt: item.created_at || ''
       };
     });
+    // Más recientes primero
+    allImages.sort(function(a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
   } catch(e) {
+    console.error(e.message);
     allImages = [];
   }
   var brands = new Set(allImages.map(function(i) { return i.maker; }));

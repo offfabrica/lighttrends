@@ -187,7 +187,7 @@ textarea{width:100%;padding:16px;border:none;font-size:13px;background:white;col
         <button class="btn-sm btn-outline" onclick="copyHTML()">Copiar HTML</button>
         <button class="btn-sm btn-outline" onclick="copyText()">Copiar texto</button>
         <button class="btn-sm btn-dark" onclick="exportNewsletter()">⬇ Exportar HTML</button>
-        <button class="btn-sm btn-outline" onclick="exportGalleryJSON()">📁 Publicar en galería</button>
+        <button class="btn-sm btn-outline" onclick="exportIssueEntry()">📁 Publicar issue</button>
         <button class="btn-sm btn-outline" onclick="publishAllToInstagram()">📱 Publicar en Instagram</button>
         <button class="btn-sm btn-outline" onclick="publishAllToLinkedIn()">💼 Publicar en LinkedIn</button>
         <button class="btn-sm btn-outline" onclick="publishAllToPinterest()">📌 Publicar en Pinterest</button>
@@ -262,7 +262,16 @@ function loadDemo() {
   showToast('Demo cargado');
 }
 
-async function uploadImage(imageUrl, name, maker, designer) {
+function issueTag() {
+  // Tag de la edición actual derivado de la fecha de hoy: nl-AAAAMMDD
+  var d = new Date();
+  var yyyy = d.getFullYear();
+  var mm = String(d.getMonth() + 1).padStart(2, '0');
+  var dd = String(d.getDate()).padStart(2, '0');
+  return 'nl-' + yyyy + mm + dd;
+}
+
+async function uploadImage(imageUrl, name, maker, designer, category, description, link) {
   var folder = 'lighttrends/' + (maker || 'general').toLowerCase().replace(/[^a-z0-9]/gi, '').toLowerCase();
 
   function clean(s) {
@@ -277,6 +286,20 @@ async function uploadImage(imageUrl, name, maker, designer) {
   var designerSlug = clean(designer).replace(/[^a-z0-9]+/g, '');
   var publicId = [makerSlug, nameSlug, designerSlug].filter(Boolean).join('-');
 
+  // Tags: uno general para la galería, otro específico de esta edición (issue)
+  var tags = ['lighttrends-gallery', issueTag()].join(',');
+
+  // Context: metadata clave|valor separada por | y pares por |
+  function esc(s) { return (s || '').toString().replace(/[|=]/g, ' ').replace(/\n/g, ' '); }
+  var context = [
+    'name=' + esc(name),
+    'maker=' + esc(maker),
+    'designer=' + esc(designer),
+    'category=' + esc(category),
+    'description=' + esc(description),
+    'link=' + esc(link)
+  ].join('|');
+
   var res = await fetch('https://api.cloudinary.com/v1_1/' + CLOUD + '/image/upload', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -284,7 +307,9 @@ async function uploadImage(imageUrl, name, maker, designer) {
       file: imageUrl,
       upload_preset: PRESET,
       folder: folder,
-      public_id: publicId
+      public_id: publicId,
+      tags: tags,
+      context: context
     })
   });
   var data = await res.json();
@@ -304,7 +329,7 @@ async function handleImageInput(i, inputEl, btnEl, statusEl, imgWrapEl) {
 
   try {
     var p = reportData.posts[i];
-    var cloudUrl = await uploadImage(url, p.name, p.maker, p.designer);
+    var cloudUrl = await uploadImage(url, p.name, p.maker, p.designer, p.category, p.description, p.link);
     reportData.posts[i].image = cloudUrl;
 
     // Update card image
@@ -672,44 +697,35 @@ async function publishAllToPinterest() {
   showToast(ok + ' pin' + (ok > 1 ? 's' : '') + ' publicado' + (ok > 1 ? 's' : '') + ' en Pinterest ✓');
 }
 
-function exportGalleryJSON() {
-  var existing = [];
-  try {
-    var stored = localStorage.getItem('lr_gallery');
-    if (stored) existing = JSON.parse(stored);
-  } catch(e) {}
+function exportIssueEntry() {
+  if (!reportData) { showToast('Genera el newsletter primero'); return; }
+  var approvedCount = Object.values(postStates).filter(function(s) { return s === 'approved'; }).length;
+  if (approvedCount === 0) { showToast('Aprueba al menos un post'); return; }
 
-  // Add approved posts with images to gallery
-  if (reportData) {
-    reportData.posts.forEach(function(p) {
-      if (p.image && p.image.indexOf('cloudinary') >= 0) {
-        // Check if already exists
-        var exists = existing.find(function(e) { return e.publicId === p.image; });
-        if (!exists) {
-          existing.push({
-            url: p.image,
-            publicId: p.image,
-            name: p.name || '',
-            maker: p.maker || '',
-            designer: p.designer || '',
-            category: p.category || 'interior',
-            date: reportData.date || ''
-          });
-        }
-      }
-    });
-  }
+  var tag = issueTag(); // nl-AAAAMMDD, mismo tag usado al subir las imágenes
+  var nowDate = new Date();
+  var dd = String(nowDate.getDate()).padStart(2, '0');
+  var mm = String(nowDate.getMonth() + 1).padStart(2, '0');
+  var yyyy = nowDate.getFullYear();
+  var filename = 'news' + dd + mm + yyyy + '.html';
 
-  localStorage.setItem('lr_gallery', JSON.stringify(existing));
+  var entry = {
+    tag: tag,
+    date: reportData.date || '',
+    title: reportData.intro ? reportData.intro.split('.')[0] : '',
+    intro: reportData.intro || '',
+    posts: approvedCount,
+    url: filename,
+    year: String(yyyy)
+  };
 
-  // Download gallery.json
-  var blob = new Blob([JSON.stringify(existing, null, 2)], { type: 'application/json' });
+  var blob = new Blob([JSON.stringify(entry, null, 2)], { type: 'application/json' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'gallery.json';
+  a.download = 'issue-' + tag + '.json';
   a.click();
   URL.revokeObjectURL(a.href);
-  showToast('gallery.json descargado — súbelo a GitHub');
+  showToast('Entrada descargada — añádela a issues.json en GitHub');
 }
 
 function showToast(msg) {

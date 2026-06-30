@@ -132,10 +132,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
       <label class="modal-label">URL del newsletter (opcional)</label>
       <input class="modal-input" id="m-url" type="text" placeholder="https://..."/>
     </div>
-    <div class="modal-field">
-      <label class="modal-label">URL imagen de portada (opcional)</label>
-      <input class="modal-input" id="m-img" type="text" placeholder="https://res.cloudinary.com/..."/>
-    </div>
     <div class="modal-actions">
       <button class="btn btn-primary" onclick="saveNewsletter()">Guardar</button>
       <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
@@ -146,49 +142,52 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 <div class="toast" id="toast"></div>
 
 <script>
-var STORAGE_KEY = 'lighttrends_archive';
+var CLOUD = 'dl8onsu6w';
+var issuesData = [];
 
-function loadArchive() {
+async function loadArchive() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch(e) { return []; }
-}
-
-function saveArchive(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    var res = await fetch('issues.json?v=' + Date.now());
+    if (!res.ok) throw new Error('No issues.json');
+    issuesData = await res.json();
+    if (!Array.isArray(issuesData)) issuesData = [];
+  } catch(e) {
+    issuesData = [];
+  }
+  // Más reciente primero
+  issuesData.sort(function(a, b) { return (b.tag || '').localeCompare(a.tag || ''); });
+  issuesData.forEach(function(nl, i) { nl.index = issuesData.length - i; });
+  renderArchive();
 }
 
 function renderArchive() {
-  var data = loadArchive();
   var container = document.getElementById('archive-content');
-  document.getElementById('total-count').textContent = data.length;
+  document.getElementById('total-count').textContent = issuesData.length;
 
-  if (data.length === 0) {
+  if (issuesData.length === 0) {
     container.innerHTML = '<div class="empty">' +
       '<div style="font-size:48px">💡</div>' +
       '<div class="empty-title">Sin newsletters todavía</div>' +
-      '<div class="empty-sub">Genera tu primer newsletter en la app y añádelo aquí.</div>' +
+      '<div class="empty-sub">Genera tu primer newsletter en la app: el botón "Publicar issue" descarga un archivo que debes añadir a issues.json en GitHub.</div>' +
       '</div>' +
       '<div class="nl-grid" style="margin-top:2rem">' + addCardHTML() + '</div>';
     return;
   }
 
-  // Group by year
   var byYear = {};
-  data.forEach(function(nl) {
-    var year = nl.year || '2026';
+  issuesData.forEach(function(nl) {
+    var year = nl.year || (nl.tag ? nl.tag.slice(3, 7) : '2026');
     if (!byYear[year]) byYear[year] = [];
     byYear[year].push(nl);
   });
 
-  var years = Object.keys(byYear).sort(function(a,b){ return b-a; });
+  var years = Object.keys(byYear).sort(function(a, b) { return b - a; });
   var html = '';
   years.forEach(function(year) {
-    var nls = byYear[year].sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
     html += '<div class="year-section">';
     html += '<div class="year-label">' + year + '</div>';
     html += '<div class="nl-grid">';
-    nls.forEach(function(nl) {
+    byYear[year].forEach(function(nl) {
       html += newsletterCardHTML(nl);
     });
     html += addCardHTML();
@@ -199,12 +198,9 @@ function renderArchive() {
 }
 
 function newsletterCardHTML(nl) {
-  var imgContent = nl.image
-    ? '<img src="' + nl.image + '" alt="' + nl.title + '" onerror="this.style.display=\'none\'">'
-    : '<div class="nl-card-img-ph">💡</div>';
   var num = nl.posts ? nl.posts + ' post' + (nl.posts > 1 ? 's' : '') : '';
-  var card = '<div class="nl-card" onclick="openNewsletter(\'' + nl.id + '\')" style="cursor:pointer">' +
-    '<div class="nl-card-img">' + imgContent + '<span class="nl-card-num">#' + nl.index + '</span></div>' +
+  var card = '<div class="nl-card" onclick="openIssue(\'' + nl.tag + '\')" style="cursor:pointer">' +
+    '<div class="nl-card-img" id="cover-' + nl.tag + '"><div class="nl-card-img-ph">💡</div><span class="nl-card-num">#' + nl.index + '</span></div>' +
     '<div class="nl-card-body">' +
     '<div class="nl-card-date">' + nl.date + '</div>' +
     '<div class="nl-card-title">' + nl.title + '</div>' +
@@ -215,21 +211,41 @@ function newsletterCardHTML(nl) {
     '</div></div>' +
     '<div style="padding:0 16px 14px;display:flex;gap:8px">' +
     (nl.url ? '<button class="btn btn-secondary" style="font-size:11px;padding:5px 10px" onclick="event.stopPropagation();window.open(\'' + nl.url + '\',\'_blank\')">Ver newsletter</button>' : '') +
-    '<button class="btn btn-danger" style="font-size:11px;padding:5px 10px" onclick="event.stopPropagation();deleteNewsletter(\'' + nl.id + '\')">Eliminar</button>' +
     '</div></div>';
+  // Carga perezosa de la portada desde Cloudinary (primera imagen con ese tag de issue)
+  loadIssueCover(nl.tag);
   return card;
+}
+
+async function loadIssueCover(tag) {
+  try {
+    var res = await fetch('https://res.cloudinary.com/' + CLOUD + '/image/list/' + tag + '.json');
+    if (!res.ok) return;
+    var data = await res.json();
+    var first = (data.resources || [])[0];
+    var el = document.getElementById('cover-' + tag);
+    if (first && el) {
+      var url = 'https://res.cloudinary.com/' + CLOUD + '/image/upload/' + first.public_id + '.' + first.format;
+      el.innerHTML = '<img src="' + url + '" alt="" onerror="this.style.display=\'none\'"><span class="nl-card-num">#' + (el.querySelector('.nl-card-num') ? el.querySelector('.nl-card-num').textContent.replace('#','') : '') + '</span>';
+    }
+  } catch(e) {}
 }
 
 function addCardHTML() {
   return '<div class="nl-card nl-card-add" onclick="openModal()">' +
     '<div class="nl-card-add-icon">+</div>' +
     '<div class="nl-card-add-text">Añadir newsletter</div>' +
-    '<div class="nl-card-add-sub">Añade el report de esta semana</div>' +
+    '<div class="nl-card-add-sub">Solo para ediciones antiguas sin tag de Cloudinary</div>' +
     '</div>';
 }
 
+function openIssue(tag) {
+  var nl = issuesData.find(function(n) { return n.tag === tag; });
+  if (nl && nl.url) window.open(nl.url, '_blank');
+  else showToast('Esta edición no tiene URL de newsletter asociada');
+}
+
 function openModal() {
-  // Set today's date as default
   var today = new Date();
   var months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   document.getElementById('m-date').value = today.getDate() + ' de ' + months[today.getMonth()] + ' de ' + today.getFullYear();
@@ -237,7 +253,6 @@ function openModal() {
   document.getElementById('m-intro').value = '';
   document.getElementById('m-posts').value = '';
   document.getElementById('m-url').value = '';
-  document.getElementById('m-img').value = '';
   document.getElementById('modal-overlay').classList.add('open');
 }
 
@@ -252,41 +267,24 @@ function saveNewsletter() {
   var title = document.getElementById('m-title').value.trim();
   if (!date || !title) { showToast('Fecha y título son obligatorios'); return; }
 
-  var data = loadArchive();
-  var year = date.match(/\d{4}/);
-  var nl = {
-    id: Date.now().toString(),
+  var entry = {
+    tag: 'manual-' + Date.now(),
     date: date,
     title: title,
     intro: document.getElementById('m-intro').value.trim(),
     posts: parseInt(document.getElementById('m-posts').value) || 0,
     url: document.getElementById('m-url').value.trim(),
-    image: document.getElementById('m-img').value.trim(),
-    year: year ? year[0] : '2026',
-    index: data.length + 1,
-    createdAt: new Date().toISOString()
+    year: (date.match(/\d{4}/) || ['2026'])[0]
   };
 
-  data.push(nl);
-  saveArchive(data);
+  var blob = new Blob([JSON.stringify(entry, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'issue-' + entry.tag + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
   closeModal();
-  renderArchive();
-  showToast('Newsletter añadido al archivo ✓');
-}
-
-function deleteNewsletter(id) {
-  if (!confirm('¿Eliminar este newsletter del archivo?')) return;
-  var data = loadArchive().filter(function(nl) { return nl.id !== id; });
-  saveArchive(data);
-  renderArchive();
-  showToast('Newsletter eliminado');
-}
-
-function openNewsletter(id) {
-  var data = loadArchive();
-  var nl = data.find(function(n) { return n.id === id; });
-  if (nl && nl.url) window.open(nl.url, '_blank');
-  else showToast('Este newsletter no tiene URL asociada');
+  showToast('Entrada descargada — añádela manualmente a issues.json en GitHub');
 }
 
 function showToast(msg) {
@@ -295,7 +293,7 @@ function showToast(msg) {
   setTimeout(function() { t.classList.remove('show'); }, 3000);
 }
 
-renderArchive();
+loadArchive();
 </script>
 </body>
 </html>

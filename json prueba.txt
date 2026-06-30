@@ -1,0 +1,46 @@
+{
+  "date": "4 de mayo de 2026",
+  "intro": "Salone del Mobile 2026 en Milán (21-26 abril): sin Euroluce este año — la próxima edición es 2027 — pero las grandes marcas de iluminación no han faltado. Esta semana cubrimos cinco lanzamientos destacados del FuoriSalone y los stands de iluminación en Fiera Milano.",
+  "posts": [
+    {
+      "name": "Apose",
+      "maker": "Aesop",
+      "designer": "Aesop Studio",
+      "category": "interior",
+      "description": "Primera colección de iluminación de la marca de cuidado de la piel. Lámpara de mesa de edición limitada con base de latón fundido en crudo y pantalla de vidrio soplado a boca. Emite un brillo ámbar cálido y localizado diseñado para evocar la atmósfera de una farmacia artesanal.",
+      "link": "https://www.aesop.com"
+    },
+    {
+      "name": "Lumiac",
+      "maker": "Nilufar Gallery",
+      "designer": "Andrea Mancuso",
+      "category": "interior",
+      "description": "Araña con brazos de aspecto de insecto que se mueven de forma independiente impulsados por IA integrada, actuando como una coreografía luminosa en lugar de una pieza estática. Uno de los debuts más ambiciosos del Salone del Mobile 2026.",
+      "link": "https://www.nilufar.com"
+    },
+    {
+      "name": "Corallo",
+      "maker": "Euroluce Light of Italy",
+      "designer": "Euroluce Studio",
+      "category": "interior",
+      "description": "Colección de lujo italiana inspirada en las formas orgánicas de los arrecifes de coral. Discos de vidrio con efecto diamante tallados a mano que imitan la luz del sol chispeando sobre el agua. Fabricado en vidrio de Murano soplado a boca en tonos ahumados.",
+      "link": "https://www.euroluce.it"
+    },
+    {
+      "name": "Nuvem Outdoor",
+      "maker": "Slamp",
+      "designer": "Miguel Arruda",
+      "category": "exterior",
+      "description": "Sistema modular innovador para exteriores. Una escenografía de iluminación emocional que encarna la visión experimental de la marca. Nubes de luz para espacios exteriores de hospitality y residencial premium.",
+      "link": "https://www.slamp.com/en/products/nuvem-outdoor"
+    },
+    {
+      "name": "Vera",
+      "maker": "Lasvit",
+      "designer": "Patrick Jouin",
+      "category": "interior",
+      "description": "Lámpara que captura la esencia del bosque logrando un equilibrio entre materialidad orgánica y precisión técnica. Combina vidrio borosilicato y vidrio fundido con texturas de corteza, creando un diálogo entre naturaleza e ingeniería.",
+      "link": "https://www.lasvit.com"
+    }
+  ]
+}
