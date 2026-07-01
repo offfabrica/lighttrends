@@ -575,6 +575,8 @@ function exportNewsletter() {
   var filename = 'news' + dd + mm + yyyy + '.html';
   var date = reportData && reportData.date ? reportData.date : '';
   var intro = reportData && reportData.intro ? reportData.intro : '';
+  // Título temático: primera frase de la intro (hasta el primer punto o 80 chars)
+  var titleTheme = intro ? intro.split('.')[0].trim().slice(0, 80) : date;
 
   var approved = (reportData ? reportData.posts : []).filter(function(_, i) { return postStates[i] === 'approved'; });
   var postsHTML = approved.map(function(p) {
@@ -596,7 +598,7 @@ function exportNewsletter() {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>000-FFFarchive · ${date}</title>
+<title>000-FFFarchive · ${titleTheme}</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
