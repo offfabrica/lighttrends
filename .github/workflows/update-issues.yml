@@ -2,8 +2,8 @@ name: Update issues.json
 
 on:
   push:
-    paths:
-      - 'news*.html'
+    branches:
+      - main
 
 jobs:
   update-issues:
